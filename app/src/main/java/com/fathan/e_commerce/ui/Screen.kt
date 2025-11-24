@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")

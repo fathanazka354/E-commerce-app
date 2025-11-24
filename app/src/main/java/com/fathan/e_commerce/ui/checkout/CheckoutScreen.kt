@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui.checkout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,9 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fathan.e_commerce.models.CartItem
+import com.fathan.e_commerce.domain.model.CartItem
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import com.fathan.e_commerce.ui.theme.CardWhite
 import com.fathan.e_commerce.ui.theme.TextSecondary
@@ -94,7 +95,7 @@ fun CheckoutScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 32.dp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                             color = TextSecondary
                         )
                     }

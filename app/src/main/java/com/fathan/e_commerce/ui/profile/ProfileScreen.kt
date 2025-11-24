@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,22 +35,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fathan.e_commerce.data.BottomTab
+import com.fathan.e_commerce.ui.components.BottomTab
 import com.fathan.e_commerce.data.UserPreferences
+import com.fathan.e_commerce.ui.home.BottomNavigationBar
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
-    preferences: UserPreferences,
+    profileViewModel: ProfileViewModel,
     onBack: ()-> Unit,
     onHomeClick: () -> Unit,
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
 ) {
-    val name by preferences.userNameFlow.collectAsState(initial = "")
-    val email by preferences.userEmailFlow.collectAsState(initial = "")
-    val scope = rememberCoroutineScope()
+    val name by profileViewModel.name.collectAsState()
+    val email by profileViewModel.email.collectAsState()
 
     Scaffold(
         bottomBar = {
@@ -139,7 +139,7 @@ fun ProfileScreen(
 
         Button(
             onClick = {
-                scope.launch { preferences.logout() }
+                profileViewModel.logout()
                 onBack()
             },
             modifier = Modifier
@@ -167,6 +167,7 @@ fun ProfileAction(label: String, icon: String) {
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
             Text(icon, fontSize = 26.sp)

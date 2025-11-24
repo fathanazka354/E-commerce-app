@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui.home
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,12 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fathan.e_commerce.data.BottomTab
-import com.fathan.e_commerce.models.Category
-import com.fathan.e_commerce.models.Product
+import com.fathan.e_commerce.ui.components.BottomTab
+import com.fathan.e_commerce.domain.model.Category
+import com.fathan.e_commerce.domain.model.Product
 import com.fathan.e_commerce.ui.theme.BluePrimary
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import com.fathan.e_commerce.ui.theme.CardWhite
@@ -33,7 +33,7 @@ import com.fathan.e_commerce.ui.theme.TextSecondary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    products: List<Product>,
+    homeViewModel: HomeViewModel,
     categories: List<Category>,
     onHomeClick: () -> Unit,
     onProductClick: (Product) -> Unit,
@@ -41,8 +41,7 @@ fun HomeScreen(
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit   // ← ADD THIS
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-
+    val products by homeViewModel.products.collectAsState()
 
     Scaffold(
         bottomBar = {

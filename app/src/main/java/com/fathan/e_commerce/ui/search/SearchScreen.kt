@@ -1,19 +1,35 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui.search
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fathan.e_commerce.models.DummyData
-import com.fathan.e_commerce.models.Product
+import com.fathan.e_commerce.domain.model.DummyData
+import com.fathan.e_commerce.domain.model.Product
+import com.fathan.e_commerce.ui.home.ProductCard
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import com.fathan.e_commerce.ui.theme.CardWhite
 import com.fathan.e_commerce.ui.theme.TextSecondary
@@ -21,6 +37,7 @@ import com.fathan.e_commerce.ui.theme.TextSecondary
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
+    searchViewModel: SearchViewModel,
     onBack: () -> Unit,
     onProductClick: (Product) -> Unit
 ) {
@@ -34,7 +51,7 @@ fun SearchScreen(
     }
 
     Column(
-        modifier = Modifier
+        modifier = Modifier.Companion
             .fillMaxSize()
             .background(BlueSoftBackground)
             .padding(16.dp)
@@ -42,12 +59,12 @@ fun SearchScreen(
 
         // Top AppBar Search
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Companion.CenterVertically
         ) {
             Text(
                 "←",
                 fontSize = 28.sp,
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .padding(end = 16.dp)
                     .clickable { onBack() }
             )
@@ -55,14 +72,14 @@ fun SearchScreen(
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = CardWhite,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.Companion.weight(1f)
             ) {
                 TextField(
                     value = query,
                     onValueChange = { query = it },
                     placeholder = { Text("Search products...") },
                     singleLine = true,
-                    modifier = Modifier
+                    modifier = Modifier.Companion
                         .height(52.dp)
                         .fillMaxWidth(),
                     colors = TextFieldDefaults.textFieldColors(
@@ -74,21 +91,21 @@ fun SearchScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.Companion.height(24.dp))
 
         // When no text typed
         if (query.isBlank()) {
-            Text("Recent Searches", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(Modifier.height(12.dp))
+            Text("Recent Searches", fontWeight = FontWeight.Companion.Bold, fontSize = 18.sp)
+            Spacer(Modifier.Companion.height(12.dp))
 
             RecentSearchItem("iPhone 16")
             RecentSearchItem("Headphones")
             RecentSearchItem("Samsung S24 Ultra")
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.Companion.height(32.dp))
 
-            Text("Popular Searches", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Spacer(Modifier.height(12.dp))
+            Text("Popular Searches", fontWeight = FontWeight.Companion.Bold, fontSize = 18.sp)
+            Spacer(Modifier.Companion.height(12.dp))
 
             PopularChip("iPhone")
             PopularChip("Smartwatch")
@@ -99,9 +116,9 @@ fun SearchScreen(
             // Show filtered results
             Text(
                 "Results (${results.size})",
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.Companion.Bold,
                 fontSize = 18.sp,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.Companion.padding(bottom = 12.dp)
             )
 
             LazyColumn {
@@ -110,7 +127,7 @@ fun SearchScreen(
                         product = product,
                         onClick = { onProductClick(product) }
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.Companion.height(12.dp))
                 }
             }
         }
@@ -120,11 +137,11 @@ fun SearchScreen(
 @Composable
 fun RecentSearchItem(text: String) {
     Row(
-        modifier = Modifier
+        modifier = Modifier.Companion
             .fillMaxWidth()
             .clickable { /* do search */ }
             .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Companion.CenterVertically
     ) {
         Text(text, fontSize = 14.sp)
     }
@@ -133,16 +150,16 @@ fun RecentSearchItem(text: String) {
 @Composable
 fun PopularChip(text: String) {
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
         color = CardWhite,
         shadowElevation = 2.dp,
-        modifier = Modifier
+        modifier = Modifier.Companion
             .padding(bottom = 8.dp)
             .padding(end = 8.dp)
     ) {
         Text(
             text = text,
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             fontSize = 13.sp,
             color = TextSecondary

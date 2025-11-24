@@ -1,4 +1,5 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui.login
+import android.util.Patterns
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -19,35 +19,15 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
+    loginViewModel: LoginViewModel,
     onLoginSuccess: () -> Unit,
     userPreferences: UserPreferences
 
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var passwordError by remember { mutableStateOf<String?>(null) }
-
-
-    val scope = rememberCoroutineScope()
-
-
-    fun validate(): Boolean{
-        emailError = when {
-            email.isBlank() -> "Email is required"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email"
-            else -> null
-        }
-
-        passwordError = when {
-            password.isBlank() -> "Password is required"
-            password.length < 6 -> "Password must be at least 6 characters"
-            else -> null
-        }
-        return emailError == null && passwordError == null
-    }
-
+    val email by loginViewModel.email.collectAsState()
+    val password by loginViewModel.password.collectAsState()
+    val emailError by loginViewModel.emailError.collectAsState()
+    val passwordError by loginViewModel.passwordError.collectAsState()
 
     Box(
         modifier = Modifier
@@ -91,8 +71,7 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = {
-                            email = it
-                            validate()
+                            loginViewModel.email.value = it
                                         },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
@@ -100,14 +79,13 @@ fun LoginScreen(
                         label = { Text("Email") }
                     )
                     if (emailError != null) {
-                        Text(emailError!!, color = Color.Red, fontSize = 12.sp)
+                        Text(emailError!!, color = Color.Red)
                     }
                     Spacer(Modifier.height(16.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = {
-                            password = it
-                            if (passwordError != null) validate()
+                            loginViewModel.password.value = it
                         },
                         label = { Text("Password") },
                         isError = passwordError != null,
@@ -121,15 +99,7 @@ fun LoginScreen(
 
                     Button(
                         onClick = {
-                            if (validate()) {
-                                scope.launch {
-                                    userPreferences.saveUser(
-                                        name = email.substringBefore("@"),
-                                        email = email
-                                    )
-                                }
-                                onLoginSuccess()
-                            }
+                            loginViewModel.login(onLoginSuccess)
                         }, // no real auth, just demo
                         modifier = Modifier
                             .fillMaxWidth()

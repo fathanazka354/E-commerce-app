@@ -1,10 +1,13 @@
-package com.fathan.e_commerce.screens
+package com.fathan.e_commerce.ui.product
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,18 +16,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fathan.e_commerce.models.Product
+import com.fathan.e_commerce.domain.model.Product
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import com.fathan.e_commerce.ui.theme.CardWhite
 import com.fathan.e_commerce.ui.theme.TextSecondary
 
 @Composable
 fun ProductDetailScreen(
+    productDetailViewModel: ProductDetailViewModel,
     product: Product,
     onBack: () -> Unit,
     onAddToCart: (String?, String?) -> Unit
 ) {
-    var quantity by remember { mutableStateOf(1) }
+    val isFavorite by productDetailViewModel.isFavorite(product.id).collectAsState(initial = false)
+
+    val quantity by productDetailViewModel.quantity.collectAsState(initial = 0)
     var selectedColor by remember { mutableStateOf(product.colors.firstOrNull()) }
     var selectedStorage by remember { mutableStateOf(product.storages.firstOrNull()) }
 
@@ -86,6 +92,12 @@ fun ProductDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(product.name.split(" ").first(), fontSize = 14.sp)
+                    IconButton(onClick = { productDetailViewModel.toggle(product.id) }) {
+                        Icon(
+                            if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = null
+                        )
+                    }
                 }
             }
 
@@ -122,8 +134,8 @@ fun ProductDetailScreen(
                     Spacer(Modifier.weight(1f))
                     QuantitySelector(
                         quantity = quantity,
-                        onIncrease = { quantity++ },
-                        onDecrease = { if (quantity > 1) quantity-- }
+                        onIncrease = { productDetailViewModel.increaseQuantity() },
+                        onDecrease = { productDetailViewModel.decreaseQuantity() }
                     )
                 }
 

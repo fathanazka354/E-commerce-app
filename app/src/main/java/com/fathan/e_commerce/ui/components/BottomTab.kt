@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.data
+package com.fathan.e_commerce.ui.components
 
 enum class BottomTab {
     HOME,

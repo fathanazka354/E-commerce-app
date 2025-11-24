@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.models
+package com.fathan.e_commerce.domain.model
 
 data class Product(
     val id: Int,
