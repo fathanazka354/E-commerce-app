@@ -1,6 +1,7 @@
 package com.fathan.e_commerce
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
@@ -23,6 +24,7 @@ import com.fathan.e_commerce.ui.login.LoginScreen
 import com.fathan.e_commerce.ui.product.ProductDetailScreen
 import com.fathan.e_commerce.ui.profile.ProfileScreen
 import com.fathan.e_commerce.ui.Screen
+import com.fathan.e_commerce.ui.chat.ChatScreen
 import com.fathan.e_commerce.ui.home.HomeViewModel
 import com.fathan.e_commerce.ui.login.LoginViewModel
 import com.fathan.e_commerce.ui.product.ProductDetailViewModel
@@ -43,12 +45,8 @@ class MainActivity : ComponentActivity() {
             ECommerceTheme {
                 val navController = rememberNavController()
 
-                // MOVED: ViewModels removed from here.
-                // We create them inside the specific screens below.
-                // ✅ ADD THIS: Get the MainViewModel
                 val mainViewModel: MainViewModel = hiltViewModel()
 
-                // ✅ Observe state safely from the ViewModel
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
 
                 var cartItems by remember { mutableStateOf(listOf<CartItem>()) }
@@ -106,6 +104,10 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onHomeClick = {
                                     navController.navigate(Screen.Home.route)
+                                },
+                                onChatClick = {
+                                    Log.d("TAG", "onCreate: HAHAHA")
+                                    navController.navigate(Screen.Chat.route)
                                 }
                             )
                         }
@@ -119,6 +121,23 @@ class MainActivity : ComponentActivity() {
                                 onBack = { navController.popBackStack() },
                                 onProductClick = { product ->
                                     navController.navigate(Screen.Detail.createRoute(product.id))
+                                }
+                            )
+                        }
+
+                        composable(Screen.Chat.route) {
+                            ChatScreen(
+                                onBack = { navController.popBackStack() },
+                                onHomeClick = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = false }
+                                    }
+                                },
+                                onCartClick = {
+                                    navController.navigate(Screen.Checkout.route)
+                                },
+                                onProfileClick = {
+                                    navController.navigate(Screen.Profile.route)
                                 }
                             )
                         }
