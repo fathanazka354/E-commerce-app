@@ -2,8 +2,8 @@ package com.fathan.e_commerce.ui.product
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.fathan.e_commerce.domain.usecase.IsFavoriteUseCase
-import com.fathan.e_commerce.domain.usecase.ToggleFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.IsFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.ToggleFavoriteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

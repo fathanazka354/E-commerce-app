@@ -5,10 +5,10 @@ import com.fathan.e_commerce.data.repository.FavoriteRepositoryImpl
 import com.fathan.e_commerce.data.repository.ProductRepositoryImpl
 import com.fathan.e_commerce.domain.repository.FavoriteRepository
 import com.fathan.e_commerce.domain.repository.ProductRepository
-import com.fathan.e_commerce.domain.usecase.GetFavoritesUseCase
-import com.fathan.e_commerce.domain.usecase.GetProductsUseCase
-import com.fathan.e_commerce.domain.usecase.IsFavoriteUseCase
-import com.fathan.e_commerce.domain.usecase.ToggleFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.GetFavoritesUseCase
+import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCase
+import com.fathan.e_commerce.domain.usecase.products.IsFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.ToggleFavoriteUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

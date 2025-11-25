@@ -24,6 +24,7 @@ import com.fathan.e_commerce.ui.login.LoginScreen
 import com.fathan.e_commerce.ui.product.ProductDetailScreen
 import com.fathan.e_commerce.ui.profile.ProfileScreen
 import com.fathan.e_commerce.ui.Screen
+import com.fathan.e_commerce.ui.chat.ChatDetailScreen
 import com.fathan.e_commerce.ui.chat.ChatScreen
 import com.fathan.e_commerce.ui.home.HomeViewModel
 import com.fathan.e_commerce.ui.login.LoginViewModel
@@ -126,8 +127,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(Screen.Chat.route) {
-                            ChatScreen(
-                                onBack = { navController.popBackStack() },
+                            ChatScreen( onBack = { navController.popBackStack() },
                                 onHomeClick = {
                                     navController.navigate(Screen.Home.route) {
                                         popUpTo(Screen.Home.route) { inclusive = false }
@@ -138,7 +138,19 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onProfileClick = {
                                     navController.navigate(Screen.Profile.route)
+                                },
+                                onChatClick = {
+                                    // ❌ WAS: navController.navigate(Screen.Chat.route)
+                                    // ✅ CHANGE TO:
+                                    navController.navigate(Screen.ChatDetail.route)
                                 }
+                            )
+                        }
+
+// Make sure this block exists right below it (as you had in your selection)
+                        composable(Screen.ChatDetail.route) {
+                            ChatDetailScreen(
+                                onBack = { navController.popBackStack() }
                             )
                         }
 

@@ -1,7 +1,7 @@
 package com.fathan.e_commerce.viewmodels
 
-import com.fathan.e_commerce.domain.usecase.IsFavoriteUseCase
-import com.fathan.e_commerce.domain.usecase.ToggleFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.IsFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.ToggleFavoriteUseCase
 import com.fathan.e_commerce.ui.product.ProductDetailViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
