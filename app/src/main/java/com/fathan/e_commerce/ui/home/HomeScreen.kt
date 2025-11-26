@@ -40,7 +40,8 @@ fun HomeScreen(
     onSearchClick: () -> Unit,
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onChatClick: () -> Unit
+    onChatClick: () -> Unit,
+    onWishlistClick: () -> Unit
 ) {
     val products by homeViewModel.products.collectAsState()
 
@@ -51,7 +52,8 @@ fun HomeScreen(
                 onHomeClick = onHomeClick,
                 onCartClick = onCartClick,
                 onProfileClick = onProfileClick,
-                onChatClick = onChatClick
+                onChatClick = onChatClick,
+                onWishlistClick = onWishlistClick
             )
         }
     ) { innerPadding ->
@@ -270,7 +272,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
 
 @Composable
 fun BottomNavigationBar(
-    selectedTab: BottomTab, onHomeClick: () -> Unit, onCartClick: () -> Unit, onProfileClick: () -> Unit = {}, onChatClick: () -> Unit = {}) {
+    selectedTab: BottomTab, onHomeClick: () -> Unit, onCartClick: () -> Unit, onProfileClick: () -> Unit = {}, onChatClick: () -> Unit = {}, onWishlistClick: () -> Unit) {
     Surface(tonalElevation = 8.dp) {
         Row(
             modifier = Modifier
@@ -281,7 +283,7 @@ fun BottomNavigationBar(
         ) {
             BottomItem("🏠", "Home", selected = selectedTab == BottomTab.HOME, onClick = onHomeClick)
             BottomItem("💬", "Chat", selected = selectedTab == BottomTab.CHAT, onClick = onChatClick)
-            BottomItem("❤️", "Wishlist", selected = selectedTab == BottomTab.WISHLIST)
+            BottomItem("❤️", "Wishlist", selected = selectedTab == BottomTab.WISHLIST, onClick = onWishlistClick)
             BottomItem("🛒", "Cart", selected = selectedTab == BottomTab.CART, onClick = onCartClick)
             BottomItem("👤", "Profile", selected = selectedTab == BottomTab.PROFILE, onClick = onProfileClick)
         }

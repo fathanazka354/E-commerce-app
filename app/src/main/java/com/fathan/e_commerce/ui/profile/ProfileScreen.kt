@@ -48,6 +48,8 @@ fun ProfileScreen(
     onHomeClick: () -> Unit,
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
+    onChatClick: () -> Unit,
+    onWishlistClick: () -> Unit
 ) {
     val name by profileViewModel.name.collectAsState()
     val email by profileViewModel.email.collectAsState()
@@ -58,7 +60,9 @@ fun ProfileScreen(
                 onHomeClick = onHomeClick,
                 onCartClick = onCartClick,
                 onProfileClick = onProfileClick,
-                selectedTab = BottomTab.PROFILE
+                selectedTab = BottomTab.PROFILE,
+                onWishlistClick = onWishlistClick,
+                onChatClick = onChatClick
             )
         }
     ) { innerPadding ->

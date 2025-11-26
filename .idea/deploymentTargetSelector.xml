@@ -13,9 +13,6 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="email empty should return error()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="ProductDetailViewModelTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>

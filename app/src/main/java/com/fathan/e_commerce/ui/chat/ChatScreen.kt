@@ -1,12 +1,21 @@
 package com.fathan.e_commerce.ui.chat
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -15,14 +24,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.room.Query
+import androidx.room.util.query
 import com.fathan.e_commerce.ui.components.BottomTab
 import com.fathan.e_commerce.ui.home.BottomNavigationBar
 
@@ -86,12 +96,29 @@ fun ChatScreen(
     onHomeClick: () -> Unit,
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onChatClick: () -> Unit
+    onChatClick: () -> Unit,
+    onWishlistClick: () -> Unit,
 ) {
-    val navController = rememberNavController()
-    // Note: Assuming you might want tabs later, keeping this logic but focusing on the List UI for now
-    val startDestination = TabChat.REVIEW
-    var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var isSearchActive by rememberSaveable { mutableStateOf(false) }
+
+    val filteredChats = remember(searchQuery, dataChatList) {
+        if (searchQuery.isBlank()){
+            dataChatList
+        }else{
+            dataChatList.filter { chat ->
+                chat.name.contains(searchQuery, ignoreCase = true) || chat.message.contains(searchQuery, true)
+            }
+        }
+    }
+
+    BackHandler(isSearchActive) {
+        if (searchQuery.isNotEmpty()){
+            searchQuery = ""
+        } else {
+            isSearchActive = false
+        }
+    }
 
     Scaffold(
         containerColor = Color.White, // Match the clean white background
@@ -103,54 +130,172 @@ fun ChatScreen(
                     .padding(horizontal = 24.dp, vertical = 16.dp), // Increased padding for look
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Messages",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                )
-                Spacer(modifier = Modifier.weight(1.0f))
-
-                // Search Button with circle background
-                Surface(
-                    shape = CircleShape,
-                    color = Color(0xFFF5F5F5), // Very light gray background
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = Color.Black
+                AnimatedContent(
+                    isSearchActive,
+                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                    label = "TopBar Animation"
+                ) { active ->
+                    if (active){
+                        SearchBarView(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            onClose = {
+                                isSearchActive = false
+                                searchQuery = ""
+                            }
                         )
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Messages",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                            )
+                            Spacer(modifier = Modifier.weight(1.0f))
+
+                            // Search Button with circle background
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFF5F5F5), // Very light gray background
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clickable { isSearchActive = true }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = "Search",
+                                        tint = Color.Black
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
+
             }
         },
         bottomBar = {
-            BottomNavigationBar(
-                onHomeClick = onHomeClick,
-                selectedTab = BottomTab.CHAT,
-                onProfileClick = onProfileClick,
-                onCartClick = onCartClick
-            )
+            if (!isSearchActive) { // Optional: Hide bottom bar when searching if desired
+                BottomNavigationBar(
+                    onHomeClick = onHomeClick,
+                    selectedTab = BottomTab.CHAT,
+                    onProfileClick = onProfileClick,
+                    onCartClick = onCartClick,
+                    onWishlistClick = onWishlistClick
+                )
+            }
         }
     ) { innerPadding ->
 
         // --- 4. Main Chat List ---
-        LazyColumn(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(horizontal = 24.dp), // Match outer padding
-            verticalArrangement = Arrangement.spacedBy(24.dp) // Spacing between items
-        ) {
-            items(dataChatList) { chat ->
-                ChatListItem(chat = chat, onClick = onChatClick)
+        if (filteredChats.isEmpty()) {
+            // Empty State
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = Color.LightGray,
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "No chats found",
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray)
+                    )
+                }
             }
-            // Bottom spacer to prevent FAB/BottomBar overlap issues visually
-            item { Spacer(modifier = Modifier.height(16.dp)) }
+        } else {
+            // List
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp), // Match outer padding
+                verticalArrangement = Arrangement.spacedBy(24.dp) // Spacing between items
+            ) {
+                items(filteredChats, key = { it.id }) { chat ->
+                    ChatListItem(chat = chat, onClick = onChatClick)
+                }
+                // Bottom spacer to prevent FAB/BottomBar overlap issues visually
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+            }
+        }
+    }
+}
+@Composable
+fun SearchBarView(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onClose: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Back/Close Button
+        IconButton(onClick = onClose) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Close Search",
+                tint = Color.Black
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Input Field
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier = Modifier
+                .weight(1f)
+                .height(48.dp)
+                .background(Color(0xFFF5F5F5), RoundedCornerShape(24.dp)),
+            textStyle = TextStyle(
+                color = Color.Black,
+                fontSize = 16.sp
+            ),
+            cursorBrush = SolidColor(Color.Black),
+            singleLine = true,
+            decorationBox = { innerTextField ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = "Search chats...",
+                            style = TextStyle(color = Color.Gray, fontSize = 16.sp)
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+
+        // Clear Text Button (only visible when there is text)
+        if (query.isNotEmpty()) {
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = { onQueryChange("") }) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Clear",
+                    tint = Color.Gray
+                )
+            }
         }
     }
 }
@@ -271,25 +416,6 @@ fun ChatListItem(chat: ChatItem, onClick : () -> Unit = {}) {
                         )
                     )
                 }
-            }
-        }
-    }
-}
-
-// --- Keep existing AppNavHost if needed for internal tab navigation later ---
-@Composable
-fun AppNavHost(
-    navController: NavHostController,
-    startDestination: TabChat,
-    modifier: Modifier = Modifier
-) {
-    NavHost(
-        navController,
-        startDestination = startDestination.name
-    ) {
-        TabChat.entries.forEach { destination ->
-            composable(destination.name) {
-                Text(destination.name)
             }
         }
     }

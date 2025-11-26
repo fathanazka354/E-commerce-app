@@ -33,6 +33,7 @@ import com.fathan.e_commerce.ui.profile.ProfileViewModel
 import com.fathan.e_commerce.ui.search.SearchScreen
 import com.fathan.e_commerce.ui.search.SearchViewModel
 import com.fathan.e_commerce.ui.theme.ECommerceTheme
+import com.fathan.e_commerce.ui.wishlist.WishlistScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -109,6 +110,9 @@ class MainActivity : ComponentActivity() {
                                 onChatClick = {
                                     Log.d("TAG", "onCreate: HAHAHA")
                                     navController.navigate(Screen.Chat.route)
+                                },
+                                onWishlistClick = {
+                                    navController.navigate(Screen.Wishlist.route)
                                 }
                             )
                         }
@@ -140,9 +144,10 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate(Screen.Profile.route)
                                 },
                                 onChatClick = {
-                                    // ❌ WAS: navController.navigate(Screen.Chat.route)
-                                    // ✅ CHANGE TO:
                                     navController.navigate(Screen.ChatDetail.route)
+                                },
+                                onWishlistClick = {
+                                    navController.navigate(Screen.Wishlist.route)
                                 }
                             )
                         }
@@ -153,6 +158,28 @@ class MainActivity : ComponentActivity() {
                                 onBack = { navController.popBackStack() }
                             )
                         }
+
+                        // In your NavHost definition
+                        composable(Screen.Wishlist.route) { // Assuming Screen.Wishlist exists
+                            WishlistScreen(
+                                onBack = { navController.popBackStack() },
+                                onHomeClick = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = false }
+                                    }
+                                },
+                                onCartClick = {
+                                    navController.navigate(Screen.Checkout.route)
+                                },
+                                onProfileClick = {
+                                    navController.navigate(Screen.Profile.route)
+                                },
+                                onWishlistClick = {
+                                    navController.navigate(Screen.Wishlist.route)
+                                }
+                            )
+                        }
+
 
                         composable(Screen.Profile.route) {
                             // ✅ Created here
@@ -169,7 +196,15 @@ class MainActivity : ComponentActivity() {
                                 onCartClick = {
                                     navController.navigate(Screen.Checkout.route)
                                 },
-                                onProfileClick = { }
+                                onProfileClick = {
+                                    navController.navigate(Screen.Profile.route)
+                                },
+                                onChatClick = {
+                                    navController.navigate(Screen.Chat.route)
+                                },
+                                onWishlistClick = {
+                                    navController.navigate(Screen.Wishlist.route)
+                                }
                             )
                         }
 
