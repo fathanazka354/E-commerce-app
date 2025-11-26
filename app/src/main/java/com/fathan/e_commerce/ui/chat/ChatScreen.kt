@@ -149,6 +149,17 @@ fun ChatScreen(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White,
+                                shadowElevation = 2.dp,
+                                modifier = Modifier.size(44.dp).clickable { onBack() }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
                             Text(
                                 text = "Messages",
                                 style = MaterialTheme.typography.headlineMedium.copy(

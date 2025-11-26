@@ -1,9 +1,11 @@
 package com.fathan.e_commerce
 
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
@@ -36,10 +38,12 @@ import com.fathan.e_commerce.ui.theme.ECommerceTheme
 import com.fathan.e_commerce.ui.wishlist.WishlistScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlin.Int
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -160,7 +164,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         // In your NavHost definition
-                        composable(Screen.Wishlist.route) { // Assuming Screen.Wishlist exists
+                        composable(Screen.Wishlist.route) {
                             WishlistScreen(
                                 onBack = { navController.popBackStack() },
                                 onHomeClick = {
@@ -174,9 +178,29 @@ class MainActivity : ComponentActivity() {
                                 onProfileClick = {
                                     navController.navigate(Screen.Profile.route)
                                 },
+                                // 👇 Hubungkan Logic Add to Cart di sini
+                                onAddToCart = { wishlistProduct ->
+                                    // Konversi WishlistProduct ke Product (dummy mapping karena struktur beda)
+                                    val product = Product(
+                                        id = wishlistProduct.id,
+                                        name = wishlistProduct.name,
+                                        brand = "",
+                                        ratingCount = 0,
+                                        price = wishlistProduct.price,
+                                        thumbnail = wishlistProduct.imageUrl,
+                                        colors = listOf(),
+                                        storages = listOf(),
+                                        description = "From Wishlist",
+                                        category = wishlistProduct.category,
+                                        rating = 4.5,
+//                                        isFeatured = wishlistProduct.isFeatured
+                                    )
+                                    addToCart(product, "Default", "Default")
+                                },
                                 onWishlistClick = {
                                     navController.navigate(Screen.Wishlist.route)
-                                }
+                                },
+                                totalItems = cartItems.size
                             )
                         }
 
@@ -233,7 +257,15 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.Checkout.route) {
                             CheckoutScreen(
                                 cartItems = cartItems,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onRemoveItem = { itemToRemove ->
+                                    cartItems = cartItems.filter { it != itemToRemove }
+                                },
+                                onUpdateQuantity = { item, newQty ->
+                                    cartItems = cartItems.map {
+                                        if (it == item) it.copy(quantity = newQty) else it
+                                    }
+                                }
                             )
                         }
                     }

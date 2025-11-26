@@ -1,5 +1,6 @@
 package com.fathan.e_commerce.ui.wishlist
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PunchClock
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -71,7 +73,9 @@ fun WishlistScreen(
     onHomeClick: () -> Unit,
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onWishlistClick: () -> Unit
+    onWishlistClick: () -> Unit,
+    onAddToCart: (WishlistProduct) -> Unit,
+    totalItems: Int = 0
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -106,7 +110,7 @@ fun WishlistScreen(
 
     val bestProducts = filteredProducts.filter { !it.isFeatured }
     val featuredProducts = filteredProducts.filter { it.isFeatured }
-
+// Tambahkan variable ini di bawah 'var selectedCategory ...'
     Scaffold(
         containerColor = Color(0xFFFAFAFA),
         bottomBar = {
@@ -140,9 +144,41 @@ fun WishlistScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Text(
-                    text = "Shop", // Or "Wishlist" per your request
+                    text = "Wishlist", // Or "Wishlist" per your request
                     style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                 )
+                Spacer(Modifier.weight(1f))
+                // Tombol Keranjang dengan Indikator (Badge)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White,
+                    shadowElevation = 2.dp,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clickable { onCartClick() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        BadgedBox(
+                            badge = {
+                                if (totalItems > 0) {
+                                    Badge(
+                                        containerColor = Color(0xFFD6001C), // Merah Tokopedia
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(text = totalItems.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart,
+                                contentDescription = "Cart",
+                                tint = Color.Black,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -208,10 +244,10 @@ fun WishlistScreen(
                 // 1. Best Products Header
                 if (bestProducts.isNotEmpty()) {
                     item(span = { GridItemSpan(2) }) {
-                        SectionHeader("Best Products")
+                        SectionHeader("Best Products", )
                     }
                     items(bestProducts) { product ->
-                        ProductCard(product)
+                        ProductCard(product, onAddClick = {onAddToCart(product)})
                     }
                 }
 
@@ -222,7 +258,7 @@ fun WishlistScreen(
                         SectionHeader("Featured Product")
                     }
                     items(featuredProducts) { product ->
-                        ProductCard(product)
+                        ProductCard(product, onAddClick = {onAddToCart(product)})
                     }
                 }
             }
@@ -301,7 +337,8 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun ProductCard(product: WishlistProduct) {
+fun ProductCard(product: WishlistProduct, onAddClick: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
@@ -394,7 +431,11 @@ fun ProductCard(product: WishlistProduct) {
                         .size(32.dp)
                         .clip(CircleShape)
                         .background(Color(0xFFFDD835)) // Yellow
-                        .clickable { },
+                        .clickable {
+                            onAddClick()
+
+                            Toast.makeText(context, "Added to Cart", Toast.LENGTH_SHORT).show()
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Default.Add, "Add", tint = Color.Black, modifier = Modifier.size(20.dp))
