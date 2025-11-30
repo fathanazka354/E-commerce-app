@@ -50,6 +50,7 @@ import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
 import android.media.MediaPlayer
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fathan.e_commerce.Utils
 import com.fathan.e_commerce.data.local.Message
@@ -64,7 +65,7 @@ fun ChatDetailScreen(
     val view = LocalView.current
 
     // 🔥 ViewModel
-    val chatViewModel: ChatViewModel = viewModel(factory = ChatViewModelFactory())
+    val chatViewModel: ChatViewModel = hiltViewModel()
     val uiState by chatViewModel.uiState.collectAsState()
 
     // Audio recorder (infra, tetap di UI)

@@ -26,5 +26,11 @@ data class Message(
     val audioDuration: String? = null, // e.g. "0:15"
     val replyToName: String? = null,
     val replyText: String? = null,
-    val reactions: List<String> = emptyList()
+    val reactions: List<String> = emptyList(),
+
+    val name: String? = null,
+    val message: String? = null,
+    val unreadCount: Int = 0,
+    val isTyping: Boolean = false,
+    val isOnline: Boolean = false,
 )

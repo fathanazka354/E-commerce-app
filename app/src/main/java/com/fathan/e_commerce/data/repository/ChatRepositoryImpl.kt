@@ -32,6 +32,7 @@ class ChatRepositoryImpl : ChatRepository {
             date = today.minusDays(3),
             isMe = false,
             initial = "J",
+            message = "Hey you bro",
             avatarColor = Color(0xFF8D6E63)
         )
         messages += Message(
@@ -39,9 +40,11 @@ class ChatRepositoryImpl : ChatRepository {
             text = "Here are the files.",
             senderName = "Aliena",
             time = "14:30",
+            isTyping = true,
             date = today.minusDays(1),
             isMe = false,
             initial = "A",
+            message = "Whatsapp mamy",
             avatarColor = Color(0xFFFFCCBC),
             type = MessageType.IMAGE // imageUri nanti diisi saat attach
         )
@@ -52,6 +55,8 @@ class ChatRepositoryImpl : ChatRepository {
             time = "09:18",
             date = today,
             isMe = false,
+
+            message = "Well...",
             initial = "J",
             avatarColor = Color(0xFF8D6E63)
         )
@@ -62,6 +67,8 @@ class ChatRepositoryImpl : ChatRepository {
             time = "09:18",
             date = today,
             isMe = false,
+
+            message = "GG",
             initial = "J",
             avatarColor = Color(0xFF8D6E63),
             reactions = listOf("🔥 1", "🔥 2")
@@ -74,6 +81,7 @@ class ChatRepositoryImpl : ChatRepository {
             date = today,
             isMe = true,
             initial = "Y",
+            message = "bro",
             avatarColor = Color(0xFFBA68C8),
             type = MessageType.REPLY,
             replyToName = "John Doe",
@@ -133,6 +141,7 @@ class ChatRepositoryImpl : ChatRepository {
             avatarColor = Color(0xFFE1BEE7),
             type = MessageType.AUDIO,
             audioUri = audioUri,
+            name = "Milner",
             audioDuration = durationText
         )
     }

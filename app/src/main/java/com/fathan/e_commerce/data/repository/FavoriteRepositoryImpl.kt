@@ -15,15 +15,15 @@ class FavoriteRepositoryImpl @Inject constructor(
         val isFav = dao.isFavorite(productId).map { it > 0 }
 
         if (isFav.first()){
-            dao.deleteFavorite(FavoriteEntity(productId))
+            dao.deleteFavorite(FavoriteEntity())
         }else{
-            dao.insertFavorite(FavoriteEntity(productId))
+            dao.insertFavorite(FavoriteEntity())
         }
     }
 
     override fun isFavorite(productId: Int): Flow<Boolean> =
         dao.isFavorite(productId).map { it > 0 }
 
-    override fun getFavorites(): Flow<List<Int>> = dao.getFavorite().map { list -> list.map { it.productId } }
+    override fun getFavorites(): Flow<List<Int>> = dao.getFavorite().map { list -> list.map { it.id } }
 
 }

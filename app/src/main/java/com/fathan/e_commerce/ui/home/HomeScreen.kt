@@ -12,13 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +37,7 @@ fun HomeScreen(
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChatClick: () -> Unit,
-    onWishlistClick: () -> Unit
+    onTransactionClick: () -> Unit
 ) {
     val products by homeViewModel.products.collectAsState()
 
@@ -50,10 +46,9 @@ fun HomeScreen(
             BottomNavigationBar(
                 selectedTab = BottomTab.HOME,
                 onHomeClick = onHomeClick,
-                onCartClick = onCartClick,
                 onProfileClick = onProfileClick,
                 onChatClick = onChatClick,
-                onWishlistClick = onWishlistClick
+                onTransactionClick = onTransactionClick
             )
         }
     ) { innerPadding ->
@@ -267,44 +262,5 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
             }
             Text("⭐ ${product.rating}", fontSize = 12.sp)
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    selectedTab: BottomTab, onHomeClick: () -> Unit, onCartClick: () -> Unit, onProfileClick: () -> Unit = {}, onChatClick: () -> Unit = {}, onWishlistClick: () -> Unit) {
-    Surface(tonalElevation = 8.dp) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp, horizontal = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BottomItem("🏠", "Home", selected = selectedTab == BottomTab.HOME, onClick = onHomeClick)
-            BottomItem("💬", "Chat", selected = selectedTab == BottomTab.CHAT, onClick = onChatClick)
-            BottomItem("❤️", "Wishlist", selected = selectedTab == BottomTab.WISHLIST, onClick = onWishlistClick)
-//            BottomItem("🛒", "Cart", selected = selectedTab == BottomTab.CART, onClick = onCartClick)
-            BottomItem("👤", "Profile", selected = selectedTab == BottomTab.PROFILE, onClick = onProfileClick)
-        }
-    }
-}
-
-@Composable
-private fun BottomItem(icon: String, label: String,
-                       selected: Boolean, onClick: () -> Unit = {}) {
-    val bgColor = if (selected) BlueSoftBackground else Color.Transparent
-    val textColor = if (selected) BluePrimary else TextSecondary
-
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(bgColor)
-            .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(icon, color = textColor)
-        Text(label, fontSize = 11.sp, color = textColor)
     }
 }

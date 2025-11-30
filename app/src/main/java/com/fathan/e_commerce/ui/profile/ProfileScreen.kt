@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,17 +38,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fathan.e_commerce.ui.components.BottomTab
-import com.fathan.e_commerce.data.UserPreferences
 import com.fathan.e_commerce.ui.home.BottomNavigationBar
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
-import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
     profileViewModel: ProfileViewModel,
     onBack: ()-> Unit,
     onHomeClick: () -> Unit,
-    onCartClick: () -> Unit,
+    onTransactionClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChatClick: () -> Unit,
     onWishlistClick: () -> Unit
@@ -61,10 +58,9 @@ fun ProfileScreen(
         bottomBar = {
             BottomNavigationBar(
                 onHomeClick = onHomeClick,
-                onCartClick = onCartClick,
                 onProfileClick = onProfileClick,
                 selectedTab = BottomTab.PROFILE,
-                onWishlistClick = onWishlistClick,
+                onTransactionClick = onTransactionClick,
                 onChatClick = onChatClick
             )
         }
@@ -134,8 +130,9 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier.fillMaxWidth()
         ) {
-            ProfileAction("My Orders", "📄")
-            ProfileAction("Coupons", "🏷️")
+            ProfileAction("My Orders", "📄", )
+//            ProfileAction("Wishlist", "📄", onWishlistClick)
+            ProfileAction("Coupons", "🏷️", )
             ProfileAction("Wishlist", "❤️")
         }
 
@@ -144,6 +141,7 @@ fun ProfileScreen(
         Text("Account Settings", fontWeight = FontWeight.Bold)
 
         ProfileMenu("Payment Methods", "💳")
+        ProfileMenu("Wishlist", "🛒", onWishlistClick)
         ProfileMenu("Address", "📍")
         ProfileMenu("Security & Password", "🔒")
 
@@ -175,14 +173,16 @@ fun ProfileScreen(
 }
 
 @Composable
-fun ProfileAction(label: String, icon: String) {
+fun ProfileAction(label: String, icon: String, onClick: (() -> Unit)? = null) {
     Surface(
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
         shadowElevation = 2.dp,
         modifier = Modifier
             .size(100.dp)
-            .clickable { }
+            .clickable {
+                onClick?.invoke()
+            }
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -197,12 +197,14 @@ fun ProfileAction(label: String, icon: String) {
 }
 
 @Composable
-fun ProfileMenu(label: String, icon: String) {
+fun ProfileMenu(label: String, icon: String, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 14.dp)
-            .clickable { },
+            .clickable {
+                onClick?.invoke()
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(icon, fontSize = 22.sp, modifier = Modifier.padding(end = 12.dp))

@@ -1,25 +1,23 @@
 package com.fathan.e_commerce.ui.wishlist
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.PunchClock
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -27,420 +25,296 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.fathan.e_commerce.R
-import com.fathan.e_commerce.ui.components.BottomTab
-import com.fathan.e_commerce.ui.home.BottomNavigationBar
 
-// --- Dummy Data Model ---
-data class WishlistProduct(
+val TokoGreen = Color(0xFF03AC0E)
+
+data class CollectionUi(
     val id: Int,
     val name: String,
-    val price: Double,
-    val imageUrl: String, // Using URL for Coil
-    val category: String,
-    val isFeatured: Boolean = false
+    val itemCount: Int,
+    val imageUrls: List<String>
 )
-
-// --- Dummy Data ---
-val allProducts = listOf(
-    WishlistProduct(1, "Canceling Headphone", 149.99, "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500", "Electronics", false),
-    WishlistProduct(2, "Leather Handbag", 49.99, "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500", "Fashion", false),
-    WishlistProduct(3, "Smart Watch Series 7", 299.00, "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500", "Electronics", false),
-    WishlistProduct(4, "Running Shoes", 89.50, "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500", "Fashion", false),
-    // Featured
-    WishlistProduct(5, "Memory Foam Pillow", 39.99, "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=500", "Home", true),
-    WishlistProduct(6, "Vitamin C Serum", 24.99, "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500", "Beauty", true),
-    WishlistProduct(7, "Minimalist Lamp", 55.00, "https://images.unsplash.com/photo-1507473888900-52e1ad98ca2a?w=500", "Home", true)
-)
-
-enum class SortOption {
-    DEFAULT, PRICE_HIGH_LOW, PRICE_LOW_HIGH, NAME_A_Z
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WishlistScreen(
     onBack: () -> Unit,
-    onHomeClick: () -> Unit,
-    onCartClick: () -> Unit,
-    onProfileClick: () -> Unit,
-    onWishlistClick: () -> Unit,
-    onAddToCart: (WishlistProduct) -> Unit,
-    totalItems: Int = 0
+    onCollectionClick: (Int, String) -> Unit = { _, _ -> }
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var showFilterSheet by remember { mutableStateOf(false) }
-    var selectedSort by remember { mutableStateOf(SortOption.DEFAULT) }
-    var selectedCategory by remember { mutableStateOf("All") }
-
-    val categories = listOf("All", "Electronics", "Fashion", "Home", "Beauty")
-
-    // --- Filtering Logic ---
-    val filteredProducts = remember(searchQuery, selectedSort, selectedCategory) {
-        var list = allProducts
-
-        // 1. Search
-        if (searchQuery.isNotBlank()) {
-            list = list.filter { it.name.contains(searchQuery, ignoreCase = true) }
-        }
-
-        // 2. Category
-        if (selectedCategory != "All") {
-            list = list.filter { it.category == selectedCategory }
-        }
-
-        // 3. Sorting
-        list = when (selectedSort) {
-            SortOption.PRICE_HIGH_LOW -> list.sortedByDescending { it.price }
-            SortOption.PRICE_LOW_HIGH -> list.sortedBy { it.price }
-            SortOption.NAME_A_Z -> list.sortedBy { it.name }
-            SortOption.DEFAULT -> list
-        }
-        list
-    }
-
-    val bestProducts = filteredProducts.filter { !it.isFeatured }
-    val featuredProducts = filteredProducts.filter { it.isFeatured }
-// Tambahkan variable ini di bawah 'var selectedCategory ...'
-    Scaffold(
-        containerColor = Color(0xFFFAFAFA),
-        bottomBar = {
-            BottomNavigationBar(
-                onHomeClick = onHomeClick,
-                selectedTab = BottomTab.WISHLIST, // Highlight Wishlist tab
-                onProfileClick = onProfileClick,
-                onCartClick = onCartClick,
-                onWishlistClick = onWishlistClick
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(horizontal = 24.dp)
-        ) {
-            // --- Header ---
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
-                    shadowElevation = 2.dp,
-                    modifier = Modifier.size(44.dp).clickable { onBack() }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                    }
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = "Wishlist", // Or "Wishlist" per your request
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.weight(1f))
-                // Tombol Keranjang dengan Indikator (Badge)
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
-                    shadowElevation = 2.dp,
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clickable { onCartClick() }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        BadgedBox(
-                            badge = {
-                                if (totalItems > 0) {
-                                    Badge(
-                                        containerColor = Color(0xFFD6001C), // Merah Tokopedia
-                                        contentColor = Color.White
-                                    ) {
-                                        Text(text = totalItems.toString())
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = androidx.compose.material.icons.Icons.Default.ShoppingCart,
-                                contentDescription = "Cart",
-                                tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Search & Filter ---
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Search Bar
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier.weight(1f).height(50.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    ) {
-                        Icon(Icons.Default.Search, "Search", tint = Color.LightGray)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Box(modifier = Modifier.weight(1f)) {
-                            if (searchQuery.isEmpty()) {
-                                Text("Search..", color = Color.LightGray)
-                            }
-                            androidx.compose.foundation.text.BasicTextField(
-                                value = searchQuery,
-                                onValueChange = { searchQuery = it },
-                                singleLine = true,
-                                textStyle = androidx.compose.ui.text.TextStyle(
-                                    fontSize = 16.sp,
-                                    color = Color.Black
-                                )
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Filter Button
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clickable { showFilterSheet = true }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Tune, "Filter", tint = Color.Black)
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Grid Content ---
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // 1. Best Products Header
-                if (bestProducts.isNotEmpty()) {
-                    item(span = { GridItemSpan(2) }) {
-                        SectionHeader("Best Products", )
-                    }
-                    items(bestProducts) { product ->
-                        ProductCard(product, onAddClick = {onAddToCart(product)})
-                    }
-                }
-
-                // 2. Featured Products Header
-                if (featuredProducts.isNotEmpty()) {
-                    item(span = { GridItemSpan(2) }) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        SectionHeader("Featured Product")
-                    }
-                    items(featuredProducts) { product ->
-                        ProductCard(product, onAddClick = {onAddToCart(product)})
-                    }
-                }
-            }
-        }
-    }
-
-    // --- Filter Bottom Sheet ---
-    if (showFilterSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showFilterSheet = false },
-            containerColor = Color.White
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text("Sort & Filter", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Category", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(categories.size) { index ->
-                        val cat = categories[index]
-                        FilterChip(
-                            selected = cat == selectedCategory,
-                            onClick = { selectedCategory = cat },
-                            label = { Text(cat) }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Text("Sort By Price", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(
-                        selected = selectedSort == SortOption.PRICE_HIGH_LOW,
-                        onClick = { selectedSort = SortOption.PRICE_HIGH_LOW },
-                        label = { Text("Highest Price") }
-                    )
-                    FilterChip(
-                        selected = selectedSort == SortOption.PRICE_LOW_HIGH,
-                        onClick = { selectedSort = SortOption.PRICE_LOW_HIGH },
-                        label = { Text("Lowest Price") }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = { showFilterSheet = false },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDD835))
-                ) {
-                    Text("Apply Filters", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun SectionHeader(title: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-        Text(
-            "See All",
-            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray),
-            modifier = Modifier.clickable { }
+    val collections = remember {
+        mutableStateListOf(
+            CollectionUi(1, "Semua Wishlist", 10, listOf("https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500")),
+            CollectionUi(2, "Mendaki", 1, listOf("https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=500")),
+            CollectionUi(3, "Lari", 5, listOf("https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500"))
         )
     }
+
+    // State untuk Bottom Sheet
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Wishlist", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {}) { Icon(Icons.Default.ShoppingCart, "Cart") }
+                    IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, "Menu") }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        },
+        containerColor = Color.White
+    ) { innerPadding ->
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            items(collections, key = { it.id }) { collection ->
+                CollectionCard(
+                    name = collection.name,
+                    count = collection.itemCount,
+                    thumbnailUrl = collection.imageUrls.firstOrNull(),
+                    onClick = { onCollectionClick(collection.id, collection.name) }
+                )
+            }
+
+            item {
+                CreateNewCollectionCard(onClick = { showBottomSheet = true })
+            }
+        }
+
+        if (showBottomSheet) {
+            AddCollectionBottomSheet(
+                onDismiss = { showBottomSheet = false },
+                onSave = { newName ->
+                    // Logic menambah koleksi baru
+                    val newId = (collections.maxOfOrNull { it.id } ?: 0) + 1
+                    collections.add(CollectionUi(newId, newName, 0, emptyList()))
+                    showBottomSheet = false
+                },
+                sheetState = sheetState
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddCollectionBottomSheet(
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    sheetState: SheetState
+) {
+    var collectionName by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Otomatis fokus ke text field saat muncul
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = Color.White,
+        dragHandle = null // Custom header
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp)
+                .fillMaxWidth()
+                .imePadding() // Agar naik saat keyboard muncul
+        ) {
+            // Header Sheet
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(vertical = 16.dp)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Tutup",
+                    modifier = Modifier.clickable { onDismiss() }
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text("Buat Koleksi Baru", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+
+            Divider(color = Color.LightGray.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Input Field
+            Text("Nama Koleksi", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = collectionName,
+                onValueChange = { if (it.length <= 20) collectionName = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                placeholder = { Text("Contoh: Barang Liburan") },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = TokoGreen,
+                    cursorColor = TokoGreen,
+                    focusedLabelColor = TokoGreen
+                ),
+                supportingText = {
+                    Text(
+                        text = "${collectionName.length}/20",
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color.Gray,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                    )
+                },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    if (collectionName.isNotBlank()) {
+                        onSave(collectionName)
+                        keyboardController?.hide()
+                    }
+                })
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Save Button
+            Button(
+                onClick = { onSave(collectionName) },
+                enabled = collectionName.isNotBlank(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = TokoGreen,
+                    disabledContainerColor = Color.LightGray
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Buat Koleksi", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
 }
 
 @Composable
-fun ProductCard(product: WishlistProduct, onAddClick: () -> Unit) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        shadowElevation = 0.dp, // Flat look like image
+fun CollectionCard(
+    name: String,
+    count: Int,
+    thumbnailUrl: String?,
+    onClick: () -> Unit = {}
+) {
+    Column(
         modifier = Modifier
+            .clickable { onClick() }
             .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(16.dp), spotColor = Color.LightGray.copy(alpha = 0.2f))
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
+        // Image Container
+        Box(
+            modifier = Modifier
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(8.dp))
+                .border(1.dp, Color.LightGray.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
         ) {
-            // Image & Heart Icon
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFF5F5F5)) // Light gray bg for image
-            ) {
-                // Product Image
-                Image(
-                    painter = rememberAsyncImagePainter(product.imageUrl),
-                    contentDescription = product.name,
-                    modifier = Modifier
-                        .size(80.dp)
-                        .align(Alignment.Center),
-                    contentScale = ContentScale.Fit
-                )
-
-                // Heart Icon
+            if (thumbnailUrl == null) {
+                // Placeholder Empty State
                 Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(Color.White),
+                        .fillMaxSize()
+                        .background(Color(0xFFF5F5F5)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "Like",
-                        modifier = Modifier.size(16.dp),
-                        tint = Color.Gray
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Name
-            Text(
-                text = product.name,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Price & Add Button Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "$${product.price}",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
-                            imageVector = Icons.Filled.PunchClock, // Ensure you have a clock icon or use Icons.Default.Schedule
+                            Icons.Default.FavoriteBorder,
                             contentDescription = null,
                             tint = Color.LightGray,
-                            modifier = Modifier.size(12.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "27.12-05.02",
-                            style = MaterialTheme.typography.labelSmall.copy(color = Color.LightGray, fontSize = 10.sp)
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
-
-                // Yellow Add Button
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFFDD835)) // Yellow
-                        .clickable {
-                            onAddClick()
-
-                            Toast.makeText(context, "Added to Cart", Toast.LENGTH_SHORT).show()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Add, "Add", tint = Color.Black, modifier = Modifier.size(20.dp))
-                }
+            } else {
+                Image(
+                    painter = rememberAsyncImagePainter(thumbnailUrl),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Info Koleksi
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = name,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "$count Barang",
+                    color = Color.Gray,
+                    fontSize = 12.sp
+                )
+            }
+            IconButton(onClick = { /* Menu Opsi Koleksi */ }, modifier = Modifier.size(24.dp)) {
+                Icon(Icons.Default.MoreVert, null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun CreateNewCollectionCard(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .aspectRatio(1f)
+            .border(1.dp, TokoGreen, RoundedCornerShape(8.dp)) // Green border
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .background(Color(0xFFF0F9F0)), // Light Green bg
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = "Tambah",
+                tint = TokoGreen,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Koleksi Baru",
+                color = TokoGreen,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }

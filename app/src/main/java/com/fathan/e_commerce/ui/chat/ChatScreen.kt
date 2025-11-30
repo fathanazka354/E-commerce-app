@@ -2,13 +2,21 @@ package com.fathan.e_commerce.ui.chat
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,235 +24,264 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.compose.rememberNavController
-import androidx.room.Query
-import androidx.room.util.query
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.fathan.e_commerce.data.local.Message
 import com.fathan.e_commerce.ui.components.BottomTab
 import com.fathan.e_commerce.ui.home.BottomNavigationBar
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
-// --- Enum for Navigation (Existing) ---
-enum class TabChat {
-    REVIEW,
-    FEED,
-    TRANSACTION,
-    SYSTEM
-}
-
-// --- 1. Updated Data Model to match the Picture ---
-data class ChatItem(
-    val id: Int,
-    val name: String,
-    val message: String,
-    val time: String,
-    val unreadCount: Int = 0,
-    val isTyping: Boolean = false,
-    val isOnline: Boolean = false,
-    val initial: String, // Used to simulate avatar image
-    val avatarColor: Color // Used to simulate avatar image
-)
-
-// --- 2. Dummy Data matching the "Messages" Image ---
-val dataChatList = listOf(
-    ChatItem(
-        1, "Untitled Team", "John: That's a good Idea, I think we can...", "9:24 AM", 99,
-        initial = "U", avatarColor = Color(0xFFE1BEE7) // Light Purple
-    ),
-    ChatItem(
-        2, "Deemtech", "John is typing..", "9:24 AM", 0, isTyping = true,
-        initial = "D", avatarColor = Color(0xFFA1887F) // Brown
-    ),
-    ChatItem(
-        3, "Xaos Tech Enthusiast", "John: That's a good Idea, I think we can star...", "9:24 AM", 0,
-        initial = "X", avatarColor = Color(0xFFB2DFDB) // Teal
-    ),
-    ChatItem(
-        4, "Aliena", "That's a good Idea, I think we can start to", "9:24 AM", 99, isOnline = true,
-        initial = "A", avatarColor = Color(0xFFFFCCBC) // Light Orange
-    ),
-    ChatItem(
-        5, "SUSS", "John: That's a good Idea, I think we can...", "9:24 AM", 99,
-        initial = "S", avatarColor = Color(0xFFC5CAE9) // Indigo
-    ),
-    ChatItem(
-        6, "Creative Space", "John: That's a good Idea, I think we can star...", "9:24 AM", 0,
-        initial = "C", avatarColor = Color(0xFFF8BBD0) // Pink
-    ),
-    ChatItem(
-        7, "Creative Crew", "Alice: I completely agree, let's dive deeper i...", "3:30 PM", 0,
-        initial = "CC", avatarColor = Color(0xFFFFE0B2) // Orange
-    )
-)
+val TokoGreen = Color(0xFF03AC0E)
+val TokoRed = Color(0xFFD6001C)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     onBack: () -> Unit,
     onHomeClick: () -> Unit,
-    onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChatClick: () -> Unit,
-    onWishlistClick: () -> Unit,
+    onTransactionClick: () -> Unit,
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
 
-    val filteredChats = remember(searchQuery, dataChatList) {
-        if (searchQuery.isBlank()){
-            dataChatList
-        }else{
-            dataChatList.filter { chat ->
-                chat.name.contains(searchQuery, ignoreCase = true) || chat.message.contains(searchQuery, true)
-            }
-        }
-    }
-
     BackHandler(isSearchActive) {
-        if (searchQuery.isNotEmpty()){
+        if (searchQuery.isNotEmpty()) {
             searchQuery = ""
+            viewModel.searchChat("")
         } else {
             isSearchActive = false
         }
     }
 
     Scaffold(
-        containerColor = Color.White, // Match the clean white background
+        containerColor = Color.White,
         topBar = {
-            // --- 3. Custom Top Bar matching the Image ---
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp), // Increased padding for look
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AnimatedContent(
-                    isSearchActive,
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    label = "TopBar Animation"
-                ) { active ->
-                    if (active){
-                        SearchBarView(
-                            query = searchQuery,
-                            onQueryChange = { searchQuery = it },
-                            onClose = {
-                                isSearchActive = false
-                                searchQuery = ""
-                            }
-                        )
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = Color.White,
-                                shadowElevation = 2.dp,
-                                modifier = Modifier.size(44.dp).clickable { onBack() }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(
-                                text = "Messages",
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                            )
-                            Spacer(modifier = Modifier.weight(1.0f))
-
-                            // Search Button with circle background
-                            Surface(
-                                shape = CircleShape,
-                                color = Color(0xFFF5F5F5), // Very light gray background
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clickable { isSearchActive = true }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Search,
-                                        contentDescription = "Search",
-                                        tint = Color.Black
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
+            ChatTopBar(
+                isSearchActive = isSearchActive,
+                searchQuery = searchQuery,
+                onSearchQueryChange = {
+                    searchQuery = it
+                    viewModel.searchChat(it)
+                },
+                onSearchClose = {
+                    isSearchActive = false
+                    searchQuery = ""
+                    viewModel.searchChat("")
+                },
+                onSearchClick = { isSearchActive = true },
+                onBackClick = onBack,
+                onReadAllClick = { viewModel.markAllAsRead() }
+            )
         },
         bottomBar = {
-            if (!isSearchActive) { // Optional: Hide bottom bar when searching if desired
+            if (!isSearchActive) {
                 BottomNavigationBar(
                     onHomeClick = onHomeClick,
                     selectedTab = BottomTab.CHAT,
                     onProfileClick = onProfileClick,
-                    onCartClick = onCartClick,
-                    onWishlistClick = onWishlistClick
+                    onChatClick = onChatClick,
+                    onTransactionClick = onTransactionClick
                 )
             }
         }
     ) { innerPadding ->
-
-        // --- 4. Main Chat List ---
-        if (filteredChats.isEmpty()) {
-            // Empty State
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        tint = Color.LightGray,
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "No chats found",
-                        style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray)
-                    )
-                }
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            if (!isSearchActive) {
+                ChatFilterSection(
+                    activeFilter = uiState.activeFilter,
+                    onFilterSelected = { viewModel.updateFilter(it) }
+                )
+                Divider(color = Color(0xFFF0F0F0), thickness = 1.dp)
             }
-        } else {
-            // List
-            LazyColumn(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-                    .padding(horizontal = 24.dp), // Match outer padding
-                verticalArrangement = Arrangement.spacedBy(24.dp) // Spacing between items
-            ) {
-                items(filteredChats, key = { it.id }) { chat ->
-                    ChatListItem(chat = chat, onClick = onChatClick)
+
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = TokoGreen)
                 }
-                // Bottom spacer to prevent FAB/BottomBar overlap issues visually
-                item { Spacer(modifier = Modifier.height(16.dp)) }
+            } else if (uiState.displayedMessages.isEmpty()) {
+                EmptyChatState()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(
+                        items = uiState.displayedMessages,
+                        key = { it.id }
+                    ) { chat ->
+                        // Custom Swipeable Item
+                        SwipeableChatItem(
+                            chat = chat,
+                            onClick = onChatClick,
+                            onDelete = { viewModel.deleteChat(chat.id) }
+                        )
+                        // Divider yang tidak ikut ter-swipe
+                        Divider(color = Color(0xFFF5F5F5), modifier = Modifier.padding(start = 88.dp))
+                    }
+                }
             }
         }
     }
 }
+
+// --- COMPONENTS ---
+
+@Composable
+fun ChatTopBar(
+    isSearchActive: Boolean,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchClose: () -> Unit,
+    onSearchClick: () -> Unit,
+    onBackClick: () -> Unit,
+    onReadAllClick: () -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AnimatedContent(
+                targetState = isSearchActive,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "TopBar"
+            ) { active ->
+                if (active) {
+                    SearchBarView(
+                        query = searchQuery,
+                        onQueryChange = onSearchQueryChange,
+                        onClose = onSearchClose
+                    )
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Back Button
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color.White,
+                            shadowElevation = 2.dp,
+                            modifier = Modifier.size(40.dp).clickable { onBackClick() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.Black)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        // Title
+                        Text(
+                            text = "Chat",
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Search Icon
+                        IconButton(onClick = onSearchClick) {
+                            Icon(Icons.Default.Search, "Search", tint = Color.Black)
+                        }
+
+                        // Read All (Text Action)
+                        TextButton(onClick = onReadAllClick) {
+                            Icon(
+                                imageVector = Icons.Default.DoneAll,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = TokoGreen
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                "Baca Semua",
+                                color = TokoGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ChatFilterSection(
+    activeFilter: ChatFilter,
+    onFilterSelected: (ChatFilter) -> Unit
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(ChatFilter.values()) { filter ->
+            val isSelected = activeFilter == filter
+            val backgroundColor by animateColorAsState(
+                if (isSelected) TokoGreen else Color(0xFFF5F5F5), label = "color"
+            )
+            val contentColor by animateColorAsState(
+                if (isSelected) Color.White else Color.Gray, label = "content"
+            )
+
+            Surface(
+                color = backgroundColor,
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .height(32.dp)
+                    .clickable { onFilterSelected(filter) }
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = filter.label,
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = contentColor
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun SearchBarView(
     query: String,
@@ -255,29 +292,19 @@ fun SearchBarView(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Back/Close Button
         IconButton(onClick = onClose) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Close Search",
-                tint = Color.Black
-            )
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, "Close", tint = Color.Black)
         }
         Spacer(modifier = Modifier.width(8.dp))
-
-        // Input Field
         BasicTextField(
             value = query,
             onValueChange = onQueryChange,
             modifier = Modifier
                 .weight(1f)
-                .height(48.dp)
+                .height(44.dp)
                 .background(Color(0xFFF5F5F5), RoundedCornerShape(24.dp)),
-            textStyle = TextStyle(
-                color = Color.Black,
-                fontSize = 16.sp
-            ),
-            cursorBrush = SolidColor(Color.Black),
+            textStyle = TextStyle(color = Color.Black, fontSize = 16.sp),
+            cursorBrush = SolidColor(TokoGreen),
             singleLine = true,
             decorationBox = { innerTextField ->
                 Row(
@@ -287,46 +314,164 @@ fun SearchBarView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (query.isEmpty()) {
-                        Text(
-                            text = "Search chats...",
-                            style = TextStyle(color = Color.Gray, fontSize = 16.sp)
-                        )
+                        Text("Cari chat...", style = TextStyle(color = Color.Gray, fontSize = 16.sp))
                     }
                     innerTextField()
                 }
             }
         )
-
-        // Clear Text Button (only visible when there is text)
         if (query.isNotEmpty()) {
-            Spacer(modifier = Modifier.width(8.dp))
             IconButton(onClick = { onQueryChange("") }) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Clear",
-                    tint = Color.Gray
-                )
+                Icon(Icons.Default.Close, "Clear", tint = Color.Gray)
             }
         }
     }
 }
 
 @Composable
-fun ChatListItem(chat: ChatItem, onClick : () -> Unit = {}) {
+fun EmptyChatState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = Color.LightGray,
+                modifier = Modifier.size(64.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Belum ada pesan", color = Color.Gray)
+        }
+    }
+}
+
+@Composable
+fun SwipeableChatItem(
+    chat: Message,
+    onClick: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val density = LocalDensity.current
+    val actionWidth = 130.dp
+    val actionWidthPx = with(density) { actionWidth.toPx() }
+
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    var isRevealed by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+    ) {
+        // 1. BACKGROUND ACTION (LAYER BAWAH)
+        Row(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(actionWidth)
+                .align(Alignment.CenterEnd)
+                .background(TokoRed),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable {
+                        scope.launch {
+                            offsetX.snapTo(0f)
+                            isRevealed = false
+                            onDelete()
+                        }
+                    },
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(Icons.Default.Delete, "Hapus", tint = Color.White)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Hapus", fontSize = 10.sp, color = Color.White)
+            }
+
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .fillMaxHeight(0.6f) // Tinggi divider 60% dari parent
+                    .background(Color.White.copy(0.3f))
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clickable {
+                        scope.launch {
+                            offsetX.animateTo(0f, animationSpec = tween(300))
+                            isRevealed = false
+                        }
+                    },
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(Icons.Default.Close, "Batal", tint = Color.White)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Batal", fontSize = 10.sp, color = Color.White)
+            }
+        }
+
+        Surface(
+            color = Color.White,
+            modifier = Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .fillMaxWidth()
+                .draggable(
+                    state = rememberDraggableState { delta ->
+                        // Hanya izinkan geser ke kiri (nilai negatif)
+                        val target = offsetX.value + delta
+                        scope.launch {
+                            offsetX.snapTo(target.coerceIn(-actionWidthPx, 0f))
+                        }
+                    },
+                    orientation = Orientation.Horizontal,
+                    onDragStopped = {
+                        // Snap Logic
+                        val targetOffset = if (offsetX.value < -actionWidthPx / 2) -actionWidthPx else 0f
+                        isRevealed = targetOffset != 0f
+                        scope.launch {
+                            offsetX.animateTo(targetOffset, animationSpec = tween(300))
+                        }
+                    }
+                )
+                .clickable {
+                    if (isRevealed) {
+                        scope.launch {
+                            offsetX.animateTo(0f)
+                            isRevealed = false
+                        }
+                    } else {
+                        onClick()
+                    }
+                }
+        ) {
+            ChatListItem(chat)
+        }
+    }
+}
+
+@Composable
+fun ChatListItem(chat: Message) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // --- Avatar Section ---
-        Box(
-            contentAlignment = Alignment.BottomEnd
-        ) {
-            // Simulated Image Avatar
+        // Avatar
+        Box(contentAlignment = Alignment.BottomEnd) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
                     .background(chat.avatarColor),
                 contentAlignment = Alignment.Center
@@ -338,94 +483,80 @@ fun ChatListItem(chat: ChatItem, onClick : () -> Unit = {}) {
                     fontSize = 20.sp
                 )
             }
-
-            // Online Dot
             if (chat.isOnline) {
                 Box(
                     modifier = Modifier
                         .size(14.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF4CAF50)) // Green
-                        .padding(2.dp) // Create white border effect
-                        .background(Color.White, CircleShape)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(1.dp)
-                            .background(Color(0xFF4CAF50), CircleShape)
-                    )
-                }
+                        .background(TokoGreen)
+                        .border(2.dp, Color.White, CircleShape)
+                )
             }
         }
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // --- Name and Message Section ---
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = chat.name,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-
-            if (chat.isTyping) {
+        // Text Content
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = chat.message,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color(0xFF7986CB), // Periwinkle/Purple for typing
-                        fontWeight = FontWeight.Medium
+                    text = chat.senderName,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    modifier = Modifier.weight(1f)
                 )
-            } else {
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = chat.message,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    text = chat.time,
+                    style = MaterialTheme.typography.labelSmall.copy(color = Color.Gray)
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        // --- Time and Badge Section ---
-        Column(
-            horizontalAlignment = Alignment.End
-        ) {
-            Text(
-                text = chat.time,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = Color.LightGray
-                )
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-
-            if (chat.unreadCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEF5350)), // Red badge
-                    contentAlignment = Alignment.Center
-                ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (chat.isTyping) {
                     Text(
-                        text = if (chat.unreadCount > 99) "99+" else chat.unreadCount.toString(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp
-                        )
+                        text = "Sedang mengetik...",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = TokoGreen,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
+                } else {
+                    Text(
+                        text = chat.message?: "",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = if (chat.unreadCount > 0) Color.Black else Color.Gray,
+                            fontWeight = if (chat.unreadCount > 0) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (chat.unreadCount > 0) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(TokoRed),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (chat.unreadCount > 99) "99" else chat.unreadCount.toString(),
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

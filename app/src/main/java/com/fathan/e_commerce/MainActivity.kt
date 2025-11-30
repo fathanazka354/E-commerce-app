@@ -35,7 +35,10 @@ import com.fathan.e_commerce.ui.profile.ProfileViewModel
 import com.fathan.e_commerce.ui.search.SearchScreen
 import com.fathan.e_commerce.ui.search.SearchViewModel
 import com.fathan.e_commerce.ui.theme.ECommerceTheme
+import com.fathan.e_commerce.ui.transaction.TransactionScreen
+import com.fathan.e_commerce.ui.wishlist.WishlistCollectionDetailScreen
 import com.fathan.e_commerce.ui.wishlist.WishlistScreen
+import com.fathan.e_commerce.ui.wishlist.WishlistViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlin.Int
@@ -115,8 +118,8 @@ class MainActivity : ComponentActivity() {
                                     Log.d("TAG", "onCreate: HAHAHA")
                                     navController.navigate(Screen.Chat.route)
                                 },
-                                onWishlistClick = {
-                                    navController.navigate(Screen.Wishlist.route)
+                                onTransactionClick = {
+                                    navController.navigate(Screen.Transaction.route)
                                 }
                             )
                         }
@@ -141,17 +144,14 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(Screen.Home.route) { inclusive = false }
                                     }
                                 },
-                                onCartClick = {
-                                    navController.navigate(Screen.Checkout.route)
-                                },
                                 onProfileClick = {
                                     navController.navigate(Screen.Profile.route)
                                 },
                                 onChatClick = {
                                     navController.navigate(Screen.ChatDetail.route)
                                 },
-                                onWishlistClick = {
-                                    navController.navigate(Screen.Wishlist.route)
+                                onTransactionClick = {
+                                    navController.navigate(Screen.Transaction.route)
                                 }
                             )
                         }
@@ -163,10 +163,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // In your NavHost definition
-                        composable(Screen.Wishlist.route) {
-                            WishlistScreen(
-                                onBack = { navController.popBackStack() },
+                        // ... di dalam NavHost
+                        composable(Screen.Transaction.route) { // Route 'wishlist' sekarang menampilkan halaman Transaksi
+                            TransactionScreen(
                                 onHomeClick = {
                                     navController.navigate(Screen.Home.route) {
                                         popUpTo(Screen.Home.route) { inclusive = false }
@@ -178,29 +177,21 @@ class MainActivity : ComponentActivity() {
                                 onProfileClick = {
                                     navController.navigate(Screen.Profile.route)
                                 },
-                                // 👇 Hubungkan Logic Add to Cart di sini
-                                onAddToCart = { wishlistProduct ->
-                                    // Konversi WishlistProduct ke Product (dummy mapping karena struktur beda)
-                                    val product = Product(
-                                        id = wishlistProduct.id,
-                                        name = wishlistProduct.name,
-                                        brand = "",
-                                        ratingCount = 0,
-                                        price = wishlistProduct.price,
-                                        thumbnail = wishlistProduct.imageUrl,
-                                        colors = listOf(),
-                                        storages = listOf(),
-                                        description = "From Wishlist",
-                                        category = wishlistProduct.category,
-                                        rating = 4.5,
-//                                        isFeatured = wishlistProduct.isFeatured
-                                    )
-                                    addToCart(product, "Default", "Default")
-                                },
-                                onWishlistClick = {
-                                    navController.navigate(Screen.Wishlist.route)
-                                },
-                                totalItems = cartItems.size
+                                onChatClick = {
+                                    navController.navigate(Screen.Chat.route)
+                                }
+                            )
+                        }
+
+
+                        // In your NavHost definition
+                        composable(Screen.Wishlist.route) {
+                            WishlistScreen(
+                                onBack = { navController.popBackStack() },
+                                onCollectionClick = { id, name ->
+                                    // Navigasi ke halaman detail baru
+                                    navController.navigate("wishlist_detail/$name")
+                                }
                             )
                         }
 
@@ -217,8 +208,8 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(Screen.Home.route) { inclusive = false }
                                     }
                                 },
-                                onCartClick = {
-                                    navController.navigate(Screen.Checkout.route)
+                                onTransactionClick = {
+                                    navController.navigate(Screen.Transaction.route)
                                 },
                                 onProfileClick = {
                                     navController.navigate(Screen.Profile.route)
@@ -253,6 +244,25 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+
+                        // ... di dalam NavHost
+
+// Route untuk Detail Koleksi Wishlist
+                        composable(
+                            route = "wishlist_detail/{collectionName}", // Definisikan argument
+                            arguments = listOf(navArgument("collectionName") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val collectionName = backStackEntry.arguments?.getString("collectionName") ?: "Wishlist"
+                            val wishlistVM: WishlistViewModel = hiltViewModel()
+
+                            WishlistCollectionDetailScreen(
+                                collectionName = collectionName,
+                                onBack = { navController.popBackStack() },
+                                viewModel = wishlistVM,
+                                onCartClick = { navController.navigate(Screen.Checkout.route) }
+                            )
+                        }
+
 
                         composable(Screen.Checkout.route) {
                             CheckoutScreen(

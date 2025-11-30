@@ -3,7 +3,7 @@ package com.fathan.e_commerce.ui.components
 enum class BottomTab {
     HOME,
     CHAT,
-    WISHLIST,
-    CART,
+    PROMO,
+    TRANSACTION,
     PROFILE
 }

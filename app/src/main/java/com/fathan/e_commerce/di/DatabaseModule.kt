@@ -2,19 +2,14 @@ package com.fathan.e_commerce.di
 
 import android.content.Context
 import androidx.room.Room
-import com.fathan.e_commerce.data.UserPreferences
 import com.fathan.e_commerce.data.local.AppDatabase
 import com.fathan.e_commerce.data.local.FavoriteDao
-import com.fathan.e_commerce.data.repository.ProductRepositoryImpl
-import com.fathan.e_commerce.domain.repository.ProductRepository
+import com.fathan.e_commerce.data.local.WishlistDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import javax.inject.Singleton
 
 @Module
@@ -32,5 +27,12 @@ object DatabaseModule {
 
     @Provides
     fun provideFavoriteDao(db: AppDatabase): FavoriteDao = db.favoriteDao()
+
+
+    // Provider untuk Wishlist DAO (Yang Baru)
+    @Provides
+    fun provideWishlistDao(database: AppDatabase): WishlistDao {
+        return database.wishlistDao()
+    }
 
 }
