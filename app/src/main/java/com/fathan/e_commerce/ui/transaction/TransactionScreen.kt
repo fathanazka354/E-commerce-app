@@ -65,7 +65,7 @@ val statusOptions = listOf(
 
 val productOptions = listOf(
     "Semua Produk", "Belanja", "Top-up & Tagihan", "Travel & Entertainment",
-    "Keuangan", "PLUS", "Tokopedia NOW!", "GoFood", "Lainnya"
+    "Keuangan", "PLUS", "Yep NOW!", "GoFood", "Lainnya"
 )
 
 val dateOptions = listOf(

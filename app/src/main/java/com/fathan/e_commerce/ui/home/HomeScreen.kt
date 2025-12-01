@@ -37,7 +37,8 @@ fun HomeScreen(
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
     onChatClick: () -> Unit,
-    onTransactionClick: () -> Unit
+    onTransactionClick: () -> Unit,
+    onPromoClick: () -> Unit,
 ) {
     val products by homeViewModel.products.collectAsState()
 
@@ -48,6 +49,7 @@ fun HomeScreen(
                 onHomeClick = onHomeClick,
                 onProfileClick = onProfileClick,
                 onChatClick = onChatClick,
+                onPromoClick = onPromoClick,
                 onTransactionClick = onTransactionClick
             )
         }

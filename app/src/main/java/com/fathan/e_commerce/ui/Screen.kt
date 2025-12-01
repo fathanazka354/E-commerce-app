@@ -15,4 +15,7 @@ sealed class Screen(val route: String) {
     object ChatDetail: Screen("chat_detail{chatId}"){
         fun createRoute(chatId: Int) = "chat_detail/$chatId"
     }
+    object Promo : Screen("promo")
+    object LocalProduct : Screen("local_product")
+    object FlashSale : Screen("flash_sale")
 }

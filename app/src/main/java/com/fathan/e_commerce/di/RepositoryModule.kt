@@ -7,10 +7,12 @@ import com.fathan.e_commerce.data.local.WishlistDao
 import com.fathan.e_commerce.data.repository.ChatRepositoryImpl
 import com.fathan.e_commerce.data.repository.FavoriteRepositoryImpl
 import com.fathan.e_commerce.data.repository.ProductRepositoryImpl
+import com.fathan.e_commerce.data.repository.PromoRepositoryImpl
 import com.fathan.e_commerce.data.repository.WishlistRepositoryImpl
 import com.fathan.e_commerce.domain.repository.ChatRepository
 import com.fathan.e_commerce.domain.repository.FavoriteRepository
 import com.fathan.e_commerce.domain.repository.ProductRepository
+import com.fathan.e_commerce.domain.repository.PromoRepository
 import com.fathan.e_commerce.domain.repository.WishlistRepository
 import com.fathan.e_commerce.domain.usecase.chats.GetMessagesUseCase
 import com.fathan.e_commerce.domain.usecase.chats.SendAudioMessageUseCase
@@ -99,5 +101,11 @@ object RepositoryModule {
     @Provides    @Singleton
     fun provideWishlistRepository(wishlistDao: WishlistDao): WishlistRepository {
         return WishlistRepositoryImpl(wishlistDao)
+    }
+
+
+    @Provides    @Singleton
+    fun providePromoRepository(): PromoRepository {
+        return PromoRepositoryImpl()
     }
 }

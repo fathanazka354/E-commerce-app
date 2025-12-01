@@ -46,7 +46,7 @@ class FavoriteTestDao {
         val favorites = dao!!.getFavorite().first()
 
         assertEquals(1, favorites.size)
-        assertEquals(1, favorites[0].productId)
+        assertEquals(1, favorites[0].id)
     }
 
     @Test

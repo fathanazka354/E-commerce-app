@@ -30,6 +30,7 @@ fun BottomNavigationBar(
     onChatClick: () -> Unit, // (Opsional jika tidak dipakai di bar)
     onProfileClick: () -> Unit,
     onTransactionClick: () -> Unit = {}, // Sekarang ini untuk Transaksi
+    onPromoClick: () -> Unit = {},
     selectedTab: BottomTab
 ) {
     val TokoGreen = Color(0xFF03AC0E)
@@ -46,7 +47,7 @@ fun BottomNavigationBar(
                     when (tabInfo.tab) {
                         BottomTab.HOME -> onHomeClick()
                         BottomTab.CHAT -> onChatClick() // Todo
-                        BottomTab.PROMO -> {} // Todo
+                        BottomTab.PROMO -> onPromoClick() // Todo
                         BottomTab.TRANSACTION -> onTransactionClick() // Navigasi ke Transaksi
                         BottomTab.PROFILE -> onProfileClick()
                         else -> {}

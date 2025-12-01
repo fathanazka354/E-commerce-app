@@ -2,6 +2,10 @@ package com.fathan.e_commerce.data.repository
 
 import android.net.Uri
 import com.fathan.e_commerce.data.local.MessageType
+import com.fathan.e_commerce.data.local.WishlistCollectionEntity
+import com.fathan.e_commerce.data.local.WishlistDao
+import com.fathan.e_commerce.data.local.WishlistItemEntity
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Assert.*
@@ -9,6 +13,55 @@ import org.junit.Test
 import org.mockito.Mockito.mock
 
 class ChatRepositoryImplTest {
+    class FakeChatDao : WishlistDao {
+        override fun getCollections(): Flow<List<WishlistCollectionEntity>> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun insertCollection(collection: WishlistCollectionEntity) {
+            TODO("Not yet implemented")
+        }
+
+        override fun getItemsByCollection(collectionId: Int): Flow<List<WishlistItemEntity>> {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun insertItem(item: WishlistItemEntity) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun deleteItem(productId: Int) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun getPreviewImage(collectionId: Int): String? {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun getItemCount(collectionId: Int): Int {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun updateCollectionName(
+            collectionId: Int,
+            newName: String
+        ) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun deleteCollection(collectionId: Int) {
+            TODO("Not yet implemented")
+        }
+
+        override suspend fun deleteItemsByCollection(collectionId: Int) {
+            TODO("Not yet implemented")
+        }
+
+        override fun isProductInWishlist(productId: Int): Flow<Boolean> {
+            TODO("Not yet implemented")
+        }
+
+    }
 
     @Test
     fun `getMessages returns initial dummy messages`() = runBlocking {

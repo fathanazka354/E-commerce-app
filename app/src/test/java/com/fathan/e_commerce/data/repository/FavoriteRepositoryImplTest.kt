@@ -18,7 +18,7 @@ class FavoriteRepositoryImplTest {
         private val favoritesFlow = MutableStateFlow<List<FavoriteEntity>>(emptyList())
         override suspend fun insertFavorite(entity: FavoriteEntity) {
             val current = favoritesFlow.value.toMutableList()
-            if (current.none { it.productId == entity.productId }) {
+            if (current.none { it.id == entity.id }) {
                 current.add(entity)
                 favoritesFlow.value = current
             }
@@ -26,15 +26,15 @@ class FavoriteRepositoryImplTest {
 
         override suspend fun deleteFavorite(entity: FavoriteEntity) {
             val current = favoritesFlow.value.toMutableList()
-            current.removeAll { it.productId == entity.productId }
+            current.removeAll { it.id == entity.id }
             favoritesFlow.value = current
         }
 
         override fun getFavorite(): Flow<List<FavoriteEntity>> = favoritesFlow
 
-        override fun isFavorite(productId: Int): Flow<Int> =
+        override fun isFavorite(id: Int): Flow<Int> =
             favoritesFlow.map { list ->
-                if (list.any { it.productId == productId }) 1 else 0
+                if (list.any { it.id == id }) 1 else 0
             }
 
     }

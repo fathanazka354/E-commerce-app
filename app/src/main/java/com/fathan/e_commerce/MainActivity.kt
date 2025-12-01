@@ -32,6 +32,9 @@ import com.fathan.e_commerce.ui.home.HomeViewModel
 import com.fathan.e_commerce.ui.login.LoginViewModel
 import com.fathan.e_commerce.ui.product.ProductDetailViewModel
 import com.fathan.e_commerce.ui.profile.ProfileViewModel
+import com.fathan.e_commerce.ui.promo.PromoFlashSaleScreen
+import com.fathan.e_commerce.ui.promo.PromoLocalScreen
+import com.fathan.e_commerce.ui.promo.PromoScreen
 import com.fathan.e_commerce.ui.search.SearchScreen
 import com.fathan.e_commerce.ui.search.SearchViewModel
 import com.fathan.e_commerce.ui.theme.ECommerceTheme
@@ -120,6 +123,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onTransactionClick = {
                                     navController.navigate(Screen.Transaction.route)
+                                },
+                                onPromoClick = {
+                                    navController.navigate(Screen.Promo.route)
                                 }
                             )
                         }
@@ -137,6 +143,33 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
+                        composable(Screen.Promo.route) { // Route Promo Utama
+                            PromoScreen(
+                                onHomeClick = { navController.navigate(Screen.Home.route) },
+                                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
+                                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                                onCartClick = { navController.navigate(Screen.Checkout.route) },
+                                onLocalProductClick = { navController.navigate(Screen.LocalProduct.route) }, // Navigasi ke Lokal
+                                onFlashSaleClick = { navController.navigate(Screen.FlashSale.route) } // Navigasi ke Flash Sale
+                            )
+                        }
+
+                        composable(Screen.LocalProduct.route) {
+                            PromoLocalScreen(
+                                onBack = { navController.popBackStack() },
+                                onCartClick = {
+                                    navController.navigate(Screen.Checkout.route)
+                                }
+                            )
+                        }
+
+
+                        composable(Screen.FlashSale.route) {
+                            PromoFlashSaleScreen(
+                                onBack = { navController.popBackStack() },
+
+                            )
+                        }
                         composable(Screen.Chat.route) {
                             ChatScreen( onBack = { navController.popBackStack() },
                                 onHomeClick = {
