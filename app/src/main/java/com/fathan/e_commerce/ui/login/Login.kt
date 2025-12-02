@@ -16,18 +16,16 @@ import com.fathan.e_commerce.data.UserPreferences
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import com.fathan.e_commerce.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
-
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit,
-    userPreferences: UserPreferences
-
+    onLoginSuccess: () -> Unit
 ) {
     val email by loginViewModel.email.collectAsState()
     val password by loginViewModel.password.collectAsState()
     val emailError by loginViewModel.emailError.collectAsState()
     val passwordError by loginViewModel.passwordError.collectAsState()
+    val uiState by loginViewModel.uiState.collectAsState()
 
     Box(
         modifier = Modifier
@@ -70,23 +68,21 @@ fun LoginScreen(
                 ) {
                     OutlinedTextField(
                         value = email,
-                        onValueChange = {
-                            loginViewModel.email.value = it
-                                        },
+                        onValueChange = { loginViewModel.email.value = it },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         isError = emailError != null,
                         label = { Text("Email") }
                     )
                     if (emailError != null) {
-                        Text(emailError!!, color = Color.Red)
+                        Text(emailError!!, color = Color.Red, fontSize = 12.sp)
                     }
+
                     Spacer(Modifier.height(16.dp))
+
                     OutlinedTextField(
                         value = password,
-                        onValueChange = {
-                            loginViewModel.password.value = it
-                        },
+                        onValueChange = { loginViewModel.password.value = it },
                         label = { Text("Password") },
                         isError = passwordError != null,
                         modifier = Modifier.fillMaxWidth()
@@ -98,15 +94,31 @@ fun LoginScreen(
                     Spacer(Modifier.height(24.dp))
 
                     Button(
-                        onClick = {
-                            loginViewModel.login(onLoginSuccess)
-                        }, // no real auth, just demo
+                        onClick = { loginViewModel.onLoginClickedUp(onLoginSuccess) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !uiState.isLoading
                     ) {
-                        Text("Login")
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                color = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        } else {
+                            Text("Login")
+                        }
+                    }
+
+                    if (uiState.errorMessage != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.errorMessage!!,
+                            color = Color.Red,
+                            fontSize = 12.sp
+                        )
                     }
 
                     Text(

@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch MainActivity",
+            "request": "launch",
+            "mainClass": "com.fathan.e_commerce.MainActivity",
+            "projectName": "app"
+        }
+    ]
+}

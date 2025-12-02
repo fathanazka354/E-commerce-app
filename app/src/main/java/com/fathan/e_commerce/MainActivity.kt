@@ -91,7 +91,6 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(0)
                                     }
                                 },
-                                userPreferences = mainViewModel.prefs
                             )
                         }
 

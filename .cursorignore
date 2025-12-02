@@ -1,0 +1,51 @@
+# Build outputs
+build/
+app/build/
+.gradle/
+*.apk
+*.ap_
+*.aab
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Android Studio
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated files
+**/generated/
+**/ksp/
+**/hilt/
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Firebase
+google-services.json
+
+# Logs
+*.log
+captures/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+

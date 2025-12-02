@@ -6,6 +6,9 @@ plugins {
     // Hilt plugin
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+
+    // ➕ WAJIB untuk Supabase (kotlinx.serialization)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -20,17 +23,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        vectorDrawables { useSupportLibrary = true }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
             )
         }
     }
@@ -39,31 +40,17 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+    kotlinOptions { jvmTarget = "11" }
 
-    buildFeatures {
-        compose = true
-    }
+    buildFeatures { compose = true }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.1" }
 
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
+    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 
 // ➕ TARO DI SINI
-configurations.all {
-    resolutionStrategy {
-        force("com.squareup:javapoet:1.13.0")
-    }
-}
+configurations.all { resolutionStrategy { force("com.squareup:javapoet:1.13.0") } }
 
 dependencies {
     // Core & lifecycle
@@ -93,11 +80,23 @@ dependencies {
 
     // ➕ Hilt core (ini yang bikin error kamu hilang)
     implementation(libs.hilt.android)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
 
-    // ➕ Fix untuk error javapoet canonicalName()
+    // ➕ Firebase
+    implementation(libs.supabase.gotrue)
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.storage)
+    implementation(libs.supabase.realtime)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
+    implementation(libs.ktor.client.android)
 
     // Test dependencies
     testImplementation(libs.junit)
@@ -110,6 +109,15 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.mockito.android)
+
+    // Debug tools
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation(libs.coil.compose)
+    implementation(libs.material.icons.extended)
+
     androidTestImplementation(libs.mockito.android)
 
 

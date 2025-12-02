@@ -43,6 +43,12 @@ open class UserPreferences @Inject constructor(
         }
     }
 
+    open suspend fun setIsLoggedIn(isLoggedIn: Boolean){
+        context.userDataStore.edit {
+            it[KEY_LOGGED_IN] = isLoggedIn
+        }
+    }
+
     open suspend fun logout() {
         context.userDataStore.edit {
             it.clear()

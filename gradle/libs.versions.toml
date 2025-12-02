@@ -18,6 +18,12 @@ coroutineTest = "1.8.1"
 mockito = "5.11.0"
 mockitoKotlin = "5.2.1"
 coilCompose = "2.6.0"
+credentials = "1.5.0"
+credentialsPlayServicesAuth = "1.5.0"
+googleid = "1.1.1"
+supabase = "2.5.2"
+ktor = "2.3.12" # atau versi stabil terbaru 2.3.x
+
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -49,6 +55,15 @@ mockito-android = { group = "org.mockito", name = "mockito-android", version.ref
 mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended"}
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }
+supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt" }
+supabase-gotrue = { group = "io.github.jan-tennert.supabase", name = "gotrue-kt" } # Untuk Auth
+supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" } # Untuk upload file
+supabase-realtime = { group = "io.github.jan-tennert.supabase", name = "realtime-kt" } # Untuk fitur realtime/chat
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -56,3 +71,4 @@ jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = 
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
