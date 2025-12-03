@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.fathan.e_commerce.data.local.FavoriteDao
 import com.fathan.e_commerce.data.local.WishlistDao
+import com.fathan.e_commerce.data.remote.SupabaseUserRemoteDataSource
 import com.fathan.e_commerce.data.repository.AuthRepositoryImpl
 import com.fathan.e_commerce.data.repository.ChatRepositoryImpl
 import com.fathan.e_commerce.data.repository.FavoriteRepositoryImpl
@@ -125,11 +126,13 @@ object RepositoryModule {
     @Singleton
     fun provideAuthRepository(
         auth: Auth,
-        postgrest: Postgrest
+        postgrest: Postgrest,
+        remoteDataSource: SupabaseUserRemoteDataSource
     ): AuthRepository {
         return AuthRepositoryImpl(
             auth,
-            postgrest
+            postgrest = postgrest,
+            remoteDataSource = remoteDataSource
         )
     }
 }

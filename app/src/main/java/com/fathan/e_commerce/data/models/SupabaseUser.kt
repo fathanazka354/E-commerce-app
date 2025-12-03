@@ -1,4 +1,4 @@
-package com.fathan.e_commerce.data.model
+package com.fathan.e_commerce.data.models
 
 import kotlinx.serialization.Serializable
 

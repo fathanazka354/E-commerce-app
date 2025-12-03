@@ -28,6 +28,7 @@ import com.fathan.e_commerce.ui.profile.ProfileScreen
 import com.fathan.e_commerce.ui.Screen
 import com.fathan.e_commerce.ui.chat.ChatDetailScreen
 import com.fathan.e_commerce.ui.chat.ChatScreen
+import com.fathan.e_commerce.ui.forgot_password.ForgotPasswordScreen
 import com.fathan.e_commerce.ui.home.HomeViewModel
 import com.fathan.e_commerce.ui.login.LoginViewModel
 import com.fathan.e_commerce.ui.product.ProductDetailViewModel
@@ -37,6 +38,7 @@ import com.fathan.e_commerce.ui.promo.PromoLocalScreen
 import com.fathan.e_commerce.ui.promo.PromoScreen
 import com.fathan.e_commerce.ui.search.SearchScreen
 import com.fathan.e_commerce.ui.search.SearchViewModel
+import com.fathan.e_commerce.ui.signup.SignUpScreen
 import com.fathan.e_commerce.ui.theme.ECommerceTheme
 import com.fathan.e_commerce.ui.transaction.TransactionScreen
 import com.fathan.e_commerce.ui.wishlist.WishlistCollectionDetailScreen
@@ -91,6 +93,31 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(0)
                                     }
                                 },
+                                onSignUpClick = {
+                                    navController.navigate(Screen.SignUp.route)
+                                },
+                                onForgotPasswordClick = {
+                                    navController.navigate(Screen.ForgotPassword.route)
+                                }
+                            )
+                        }
+
+                        composable(Screen.SignUp.route) {
+                            SignUpScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onAlreadyHaveAccountClick = { navController.popBackStack() },
+                                onSignUpSuccess = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(0)
+                                    }
+                                }
+                            )
+                        }
+
+                        composable(Screen.ForgotPassword.route) {
+                            ForgotPasswordScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onSubmit = { email ->}
                             )
                         }
 

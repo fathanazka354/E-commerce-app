@@ -1,7 +1,10 @@
 package com.fathan.e_commerce.data.repository
 
 import android.util.Log
-import com.fathan.e_commerce.data.model.SupabaseUser
+import com.fathan.e_commerce.data.models.SupabaseUser
+import com.fathan.e_commerce.data.models.auth.SignUpResult
+import com.fathan.e_commerce.data.remote.SupabaseUserRemoteDataSource
+import com.fathan.e_commerce.domain.entities.auth.SignUpParams
 import com.fathan.e_commerce.domain.model.AuthUser
 import com.fathan.e_commerce.domain.repository.AuthRepository
 import com.fathan.e_commerce.domain.repository.AuthResult
@@ -9,10 +12,12 @@ import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import java.security.MessageDigest
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
     private val supabaseAuth: Auth,
+    private val remoteDataSource: SupabaseUserRemoteDataSource,
     private val postgrest: Postgrest
 ) : AuthRepository {
 
@@ -56,6 +61,29 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun signUp(params: SignUpParams): SignUpResult {
+        return try {
+            val hashedPassword = hashPassword(params.password)
+            val userId = remoteDataSource.createUserWithRelations(
+                name = params.name,
+                email = params.email,
+                hashedPassword = hashedPassword,
+                accountType = params.accountType
+            )
+            SignUpResult.Success(userId)
+        } catch (e: Exception){
+            e.printStackTrace()
+            SignUpResult.Error(e.message ?: "Sign Up Failed")
+        }
+    }
+
+    private fun hashPassword(password: String): String {
+        val bytes = MessageDigest
+            .getInstance("SHA-256")
+            .digest(password.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
     /**
      * Save user data to Supabase table "users"
      * Only saves if user with same email doesn't exist
@@ -96,15 +124,15 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun currentUser(): AuthUser? {
-        val session = supabaseAuth.currentSessionOrNull()
-        val user = session?.user ?: return null
-
-        return AuthUser(
-            uid = user.id,
-            email = user.email ?: ""
-        )
-    }
+//    override fun currentUser(): AuthUser? {
+//        val session = supabaseAuth.currentSessionOrNull()
+//        val user = session?.user ?: return null
+//
+//        return AuthUser(
+//            uid = user.id,
+//            email = user.email ?: ""
+//        )
+//    }
 
     override suspend fun logout() {
         supabaseAuth.signOut()

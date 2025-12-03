@@ -24,6 +24,17 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
+
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${project.properties["SUPABASE_URL"] ?: ""}\""
+        )
+        buildConfigField(
+            "String",
+            "SUPABASE_ANON_KEY",
+            "\"${project.properties["SUPABASE_ANON_KEY"] ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -42,7 +53,10 @@ android {
     }
     kotlinOptions { jvmTarget = "11" }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.1" }
 

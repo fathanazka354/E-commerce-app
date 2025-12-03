@@ -27,23 +27,25 @@ class LoginViewModel  @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUIState())
     val uiState: MutableStateFlow<LoginUIState> = _uiState
 
-    fun onLoginClickedUp(onSuccess: () -> Unit){
+    fun onLoginClickedUp(onSuccess: () -> Unit) {
         val emailValue = email.value.trim()
         val passwordValue = password.value
 
         emailError.value = when {
             emailValue.isBlank() -> "Email tidak boleh kosong"
-            !android.util.Patterns.EMAIL_ADDRESS.matcher(emailValue).matches() -> "Email tidak valid"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(emailValue).matches() ->
+                "Email tidak valid"
             else -> null
         }
 
         passwordError.value = when {
-            emailValue.isBlank() -> "Password tidak boleh kosong"
+            passwordValue.isBlank() -> "Password tidak boleh kosong"
             passwordValue.length < 8 -> "Password minimal 8 karakter"
             else -> null
         }
 
-        if (emailError.value != null && passwordError.value != null) return
+        // kalau salah satu ada error, stop
+        if (emailError.value != null || passwordError.value != null) return
 
         viewModelScope.launch {
             _uiState.value = LoginUIState(isLoading = true)
@@ -54,13 +56,13 @@ class LoginViewModel  @Inject constructor(
                     _uiState.value = LoginUIState(isLoading = false)
                     onSuccess()
                 }
+
                 is AuthResult.Error -> {
                     _uiState.value = LoginUIState(
                         isLoading = false,
                         errorMessage = result.message
                     )
                 }
-
             }
         }
     }

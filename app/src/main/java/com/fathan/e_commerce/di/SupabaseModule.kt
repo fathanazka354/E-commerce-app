@@ -1,6 +1,6 @@
 package com.fathan.e_commerce.di
 
-import android.net.http.HttpResponseCache.install
+import com.fathan.e_commerce.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,10 +17,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object SupabaseModule {
     
-    // TODO: Replace with your Supabase project URL and anon key
-    // Get these from: https://app.supabase.com/project/YOUR_PROJECT/settings/api
-    private const val SUPABASE_URL = "YOUR_SUPABASE_URL"
-    private const val SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"
+    private const val SUPABASE_URL = BuildConfig.SUPABASE_URL
+    private const val SUPABASE_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
     
     @Provides
     @Singleton

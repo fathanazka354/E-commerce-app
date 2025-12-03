@@ -2,6 +2,8 @@ package com.fathan.e_commerce.ui
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
+    object SignUp : Screen("signup")
+    object ForgotPassword : Screen("forgot_password")
     object Home : Screen("home")
     object Detail : Screen("detail/{productId}") {
         fun createRoute(productId: Int) = "detail/$productId"
