@@ -1,13 +1,16 @@
+import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.compose.compiler)
 
-    // Hilt plugin
+    // Hilt
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
 
-    // ➕ WAJIB untuk Supabase (kotlinx.serialization)
+    // Supabase (kotlin serialization)
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -25,24 +28,29 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        buildConfigField(
-            "String",
-            "SUPABASE_URL",
-            "\"${project.properties["SUPABASE_URL"] ?: ""}\""
-        )
-        buildConfigField(
-            "String",
-            "SUPABASE_ANON_KEY",
-            "\"${project.properties["SUPABASE_ANON_KEY"] ?: ""}\""
-        )
+        // --- SAFE: baca local.properties manual tanpa internal API ---
+        val localPropsFile = rootProject.file("local.properties")
+        val localProps = Properties().apply {
+            if (localPropsFile.exists()) {
+                localPropsFile.inputStream().use { load(it) }
+            }
+        }
+
+        val supabaseUrl = localProps.getProperty("SUPABASE_URL", "")
+        val supabaseAnon = localProps.getProperty("SUPABASE_ANON_KEY", "")
+        val deployedURL = localProps.getProperty("MY_DEPLOYED_URL", "")
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnon\"")
+        buildConfigField("String", "MY_DEPLOYED_URL", "\"$deployedURL\"")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
     }
@@ -55,64 +63,60 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
+        buildConfig = true // 🔥 WAJIB untuk menggunakan BuildConfig
     }
 
     composeOptions { kotlinCompilerExtensionVersion = "1.5.1" }
 
-    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
+    packaging {
+        resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    }
 }
 
-// ➕ TARO DI SINI
-configurations.all { resolutionStrategy { force("com.squareup:javapoet:1.13.0") } }
+// Force conflict fix
+configurations.all {
+    resolutionStrategy {
+        force("com.squareup:javapoet:1.13.0")
+    }
+}
 
 dependencies {
-    // Core & lifecycle
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
 
-    // Compose BOM + UI
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Navigation Compose (sebaiknya implementation, bukan debug)
     implementation(libs.androidx.navigation.compose)
 
-    // DataStore
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.datastore.core)
 
-    // Room runtime (kalau pakai Room)
     implementation(libs.androidx.room)
 
-    // Hilt Navigation Compose (sudah ada di libs.versions.toml)
     implementation(libs.androidx.hilt)
-
-    // ➕ Hilt core (ini yang bikin error kamu hilang)
     implementation(libs.hilt.android)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
 
-    // ➕ Firebase
-    implementation(libs.supabase.gotrue)
+    // Supabase
     implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.gotrue)
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.storage)
     implementation(libs.supabase.realtime)
+
+    // HTTP engine
+    implementation(libs.ktor.client.android)
+
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    implementation(libs.ktor.client.android)
-
-    // Test dependencies
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockito.core)
@@ -125,17 +129,6 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.mockito.android)
 
-    // Debug tools
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-
-    implementation(libs.coil.compose)
-    implementation(libs.material.icons.extended)
-
-    androidTestImplementation(libs.mockito.android)
-
-
-    // Debug tools
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 

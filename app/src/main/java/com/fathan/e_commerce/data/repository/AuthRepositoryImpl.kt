@@ -12,8 +12,11 @@ import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class AuthRepositoryImpl @Inject constructor(
     private val supabaseAuth: Auth,
@@ -33,9 +36,22 @@ class AuthRepositoryImpl @Inject constructor(
             val session = supabaseAuth.currentSessionOrNull()
             val user = session?.user
 
+
             if (user != null) {
                 // 3) Simpan user di table "users" kalau belum ada
-                saveUserToSupabase(user.id, email, password)
+                val hashedInput = hashPassword(password)
+
+                val existingUser = postgrest.from("users")
+                    .select(columns = Columns.ALL) {
+                        filter {
+                            eq("email", email)
+                            eq("password", hashedInput)
+                        }
+                    }
+                    .decodeSingleOrNull<SupabaseUser>()
+                Log.d("TAG", "login: User not found 1")
+
+                if (existingUser == null) return AuthResult.Error("Login Failed: User not found")
 
                 AuthResult.Success(
                     AuthUser(
@@ -44,10 +60,13 @@ class AuthRepositoryImpl @Inject constructor(
                     )
                 )
             } else {
+                Log.d("TAG", "login: User not found 2")
                 AuthResult.Error("Login Failed: User not found")
             }
         } catch (e: Exception) {
+
             val msg = e.message.orEmpty()
+            Log.d("TAG", "${msg}")
             val errorMessage = when {
                 msg.contains("Invalid login credentials", ignoreCase = true) ->
                     "Email atau password salah"
@@ -63,6 +82,13 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun signUp(params: SignUpParams): SignUpResult {
         return try {
+            val authResponse = supabaseAuth.signUpWith(Email){
+                email = params.email
+                password = params.password
+            }
+
+            if (authResponse == null) return SignUpResult.Error("Sign Up Failed")
+
             val hashedPassword = hashPassword(params.password)
             val userId = remoteDataSource.createUserWithRelations(
                 name = params.name,
@@ -76,6 +102,73 @@ class AuthRepositoryImpl @Inject constructor(
             SignUpResult.Error(e.message ?: "Sign Up Failed")
         }
     }
+    override suspend fun resetPasswordWithToken(
+        token: String,
+        newPassword: String
+    ): AuthResult<Boolean> {
+
+        return try {
+
+            // 1. Update password Auth
+            val authUpdate = remoteDataSource.updatePasswordWithToken(token, newPassword)
+            if (authUpdate.isFailure) {
+                return AuthResult.Error(authUpdate.exceptionOrNull()?.message ?: "Failed update auth password")
+            }
+
+            // 2. Ambil email user dari token
+            val userInfoResult = remoteDataSource.getUserFromToken(token)
+            if (userInfoResult.isFailure) {
+                return AuthResult.Error(userInfoResult.exceptionOrNull()?.message ?: "Failed get user from token")
+            }
+            val userInfo = userInfoResult.getOrNull()!!
+            val email = userInfo.email ?: return AuthResult.Error("Email not found in token")
+
+            // 3. Hash password
+            val hashedPassword = hashPassword(newPassword)
+
+            // 4. Cek apakah user ada di table users
+            val existsResult = remoteDataSource.findUserByEmail(email)
+            if (existsResult.isFailure) {
+                return AuthResult.Error("Failed checking user exist: ${existsResult.exceptionOrNull()?.message}")
+            }
+
+            val exists = existsResult.getOrNull() == true
+
+            if (exists) {
+                // 5. Update password saja
+                val updateResult = remoteDataSource.updateUsersTablePassword(
+                    email = email,
+                    hashedPassword = hashedPassword
+                )
+
+                if (updateResult.isFailure) {
+                    return AuthResult.Error(updateResult.exceptionOrNull()?.message ?: "Failed update users table")
+                }
+            }
+
+            AuthResult.Success(true)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            AuthResult.Error(e.message ?: "Update Password Failed")
+        }
+    }
+
+    override suspend fun requestPasswordReset(
+        email: String,
+        redirectTo: String?
+    ): AuthResult<Boolean> {
+
+        return try {
+            remoteDataSource.sendPasswordRecoveryEmail(email, redirectTo)
+            AuthResult.Success(
+                data = true
+            )
+        } catch (e: Exception){
+            e.printStackTrace()
+            AuthResult.Error(e.message ?: "Update Password Failed")
+        }
+    }
 
     private fun hashPassword(password: String): String {
         val bytes = MessageDigest
@@ -84,45 +177,7 @@ class AuthRepositoryImpl @Inject constructor(
         return bytes.joinToString("") { "%02x".format(it) }
     }
 
-    /**
-     * Save user data to Supabase table "users"
-     * Only saves if user with same email doesn't exist
-     *
-     * NOTE: Sebaiknya **jangan** simpan password plain text di table ini.
-     * Lebih aman pakai kolom lain (display name, avatar, dsb.) dan biarkan Auth yang handle password.
-     */
-    private suspend fun saveUserToSupabase(uid: String, email: String, password: String) {
-        try {
-            // Cek apakah user sudah ada berdasarkan email
-            val existingUser = postgrest.from("users")
-                .select(columns = Columns.ALL) {
-                    filter {
-                        eq("email", email)
-                    }
-                }
-                .decodeSingleOrNull<SupabaseUser>()
 
-            if (existingUser == null) {
-                Log.d("AUTH_REPOSITORY_IMPL", "saveUserToSupabase: SAVED")
-
-                val name = email.substringBefore("@")
-
-                val userData = SupabaseUser(
-                    id = uid,
-                    name = name,
-                    email = email,
-                    password = password // ❗ tidak disarankan di production
-                )
-
-                postgrest.from("users").insert(userData)
-            } else {
-                Log.d("AUTH_REPOSITORY_IMPL", "saveUserToSupabase: User already exists, skipping")
-            }
-        } catch (e: Exception) {
-            Log.e("AUTH_REPOSITORY_IMPL", "Error saving user to Supabase", e)
-            e.printStackTrace()
-        }
-    }
 
 //    override fun currentUser(): AuthUser? {
 //        val session = supabaseAuth.currentSessionOrNull()
@@ -134,7 +189,24 @@ class AuthRepositoryImpl @Inject constructor(
 //        )
 //    }
 
-    override suspend fun logout() {
-        supabaseAuth.signOut()
+    override suspend fun logout(): Boolean {
+        return try {
+            withContext(NonCancellable) {
+                try {
+                    supabaseAuth.signOut()
+                    Log.d("AuthRepository", "Logout successful")
+                    true
+                } catch (e: CancellationException) {
+                    Log.d("AuthRepository", "Logout cancelled but considered successful")
+                    true
+                } catch (e: Exception) {
+                    Log.e("AuthRepository", "Logout failed", e)
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Logout error", e)
+            false
+        }
     }
 }

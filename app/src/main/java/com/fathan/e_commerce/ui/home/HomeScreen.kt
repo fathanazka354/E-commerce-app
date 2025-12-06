@@ -1,4 +1,5 @@
 package com.fathan.e_commerce.ui.home
+
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +45,7 @@ fun HomeScreen(
     val products by homeViewModel.products.collectAsState()
 
     Scaffold(
+        containerColor = BlueSoftBackground,
         bottomBar = {
             BottomNavigationBar(
                 selectedTab = BottomTab.HOME,
@@ -53,26 +56,33 @@ fun HomeScreen(
                 onTransactionClick = onTransactionClick
             )
         }
-    ) { innerPadding ->
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(BlueSoftBackground)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .background(BlueSoftBackground),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = paddingValues.calculateTopPadding() ,
+                bottom = paddingValues.calculateBottomPadding() + 24.dp // Extra 24dp untuk safety
+            )
         ) {
-            item { Spacer(Modifier.height(12.dp)) }
+            // Top spacing
+//            item { Spacer(Modifier.height(12.dp)) }
 
-            /* Search + icons row */
+            // Search + Icons Row
             item {
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Search Bar
                     Surface(
                         shape = RoundedCornerShape(24.dp),
                         color = CardWhite,
-//                        tonalElevation = 2.dp,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        shadowElevation = 2.dp
                     ) {
                         Box(
                             modifier = Modifier
@@ -80,25 +90,19 @@ fun HomeScreen(
                                     Log.i("HomeScreen", "Search clicked")
                                     onSearchClick()
                                 }
+                                .height(54.dp)
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.CenterStart
                         ) {
-                            TextField(
-                                value = "",
-                                onValueChange = {},
-                                readOnly = true,
-                                enabled = false,
-                                placeholder = { Text("Search") },
-                                singleLine = true,
-                                modifier = Modifier
-                                    .height(54.dp)
-                                    .fillMaxWidth(),
-                                colors = TextFieldDefaults.textFieldColors(
-                                    containerColor = CardWhite,
-                                    focusedIndicatorColor = CardWhite,
-                                    unfocusedIndicatorColor = CardWhite
-                                )
+                            Text(
+                                text = "Search",
+                                color = Color.Gray,
+                                fontSize = 16.sp
                             )
                         }
                     }
+
                     Spacer(Modifier.width(8.dp))
                     SmallCircleIcon("🔔")
                     Spacer(Modifier.width(8.dp))
@@ -107,56 +111,79 @@ fun HomeScreen(
                 Spacer(Modifier.height(16.dp))
             }
 
-            /* Banner */
+            // Featured Banner
             item {
                 Surface(
                     color = BluePrimary,
                     shape = RoundedCornerShape(24.dp),
+                    shadowElevation = 4.dp,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp)
+                        .height(160.dp)
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(16.dp)
+                            .padding(24.dp)
                             .fillMaxSize(),
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            "iPhone 16 Pro",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Text(
-                            "Extraordinary Visual &\nExceptional Power",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                        Column {
+                            Text(
+                                text = "iPhone 16 Pro",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Extraordinary Visual &\nExceptional Power",
+                                fontSize = 16.sp,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+
                         Button(
-                            onClick = { /* maybe open the first product */ },
-                            shape = RoundedCornerShape(20.dp)
+                            onClick = { /* Open product details */ },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF8B4513)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Shop Now")
+                            Text(
+                                text = "Shop Now",
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                            )
                         }
                     }
                 }
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(24.dp))
             }
 
-            /* Categories */
+            // Categories Section Header
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Categories", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("See All", fontSize = 13.sp, color = BluePrimary)
+                    Text(
+                        text = "Categories",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.Black
+                    )
+                    TextButton(onClick = { /* Navigate to all categories */ }) {
+                        Text(
+                            text = "See All",
+                            fontSize = 14.sp,
+                            color = BluePrimary
+                        )
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
             }
 
+            // Categories Horizontal List
             item {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -168,25 +195,43 @@ fun HomeScreen(
                 Spacer(Modifier.height(24.dp))
             }
 
-            /* Products list */
+            // Flash Deals Section Header
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Flash Deals for You", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("See All", fontSize = 13.sp, color = BluePrimary)
+                    Text(
+                        text = "Flash Deals for You",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.Black
+                    )
+                    TextButton(onClick = { /* Navigate to all products */ }) {
+                        Text(
+                            text = "See All",
+                            fontSize = 14.sp,
+                            color = BluePrimary
+                        )
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
             }
 
+            // Products List
             items(products) { product ->
-                ProductCard(product = product, onClick = { onProductClick(product) })
+                ProductCard(
+                    product = product,
+                    onClick = { onProductClick(product) }
+                )
                 Spacer(Modifier.height(12.dp))
             }
 
-            item { Spacer(Modifier.height(72.dp)) } // bottom padding for nav
+            // Extra bottom spacing untuk last item
+            item {
+                Spacer(Modifier.height(8.dp))
+            }
         }
     }
 }
@@ -196,15 +241,23 @@ private fun SmallCircleIcon(
     iconText: String,
     onClick: () -> Unit = {}
 ) {
-    Box(
+    Surface(
         modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .background(CardWhite)
+            .size(48.dp)
             .clickable { onClick() },
-        contentAlignment = Alignment.Center
+        shape = CircleShape,
+        color = CardWhite,
+        shadowElevation = 2.dp
     ) {
-        Text(iconText)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                text = iconText,
+                fontSize = 20.sp
+            )
+        }
     }
 }
 
@@ -212,19 +265,29 @@ private fun SmallCircleIcon(
 fun CategoryCard(category: Category) {
     Surface(
         color = CardWhite,
-        shape = RoundedCornerShape(18.dp),
-        tonalElevation = 2.dp,
+        shape = RoundedCornerShape(16.dp),
+        shadowElevation = 3.dp,
         modifier = Modifier
-            .size(width = 96.dp, height = 96.dp)
+            .size(width = 100.dp, height = 110.dp)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
         ) {
-            Text(category.iconEmoji, fontSize = 28.sp)
-            Spacer(Modifier.height(4.dp))
-            Text(category.name, fontSize = 13.sp)
+            Text(
+                text = category.iconEmoji,
+                fontSize = 48.dp.value.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = category.name,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
         }
     }
 }
@@ -233,8 +296,8 @@ fun CategoryCard(category: Category) {
 fun ProductCard(product: Product, onClick: () -> Unit) {
     Surface(
         color = CardWhite,
-        shape = RoundedCornerShape(20.dp),
-        tonalElevation = 3.dp,
+        shape = RoundedCornerShape(16.dp),
+        shadowElevation = 3.dp,
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
@@ -243,26 +306,65 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Product Image Placeholder
             Box(
                 modifier = Modifier
-                    .size(72.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(BlueSoftBackground),
                 contentAlignment = Alignment.Center
             ) {
-                // just show abbreviation of name
-                Text(text = product.name.split(" ").first(), fontSize = 11.sp)
+                Text(
+                    text = product.name.take(1),
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BluePrimary
+                )
             }
+
             Spacer(Modifier.width(12.dp))
+
+            // Product Info
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(product.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                Text(product.brand, fontSize = 12.sp, color = TextSecondary)
-                Spacer(Modifier.height(4.dp))
-                Text("$${product.price}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text(
+                    text = product.name,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = product.brand,
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "$${product.price}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color.Black
+                )
             }
-            Text("⭐ ${product.rating}", fontSize = 12.sp)
+
+            // Rating
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "⭐",
+                    fontSize = 16.sp
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = product.rating.toString(),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.Black
+                )
+            }
         }
     }
 }

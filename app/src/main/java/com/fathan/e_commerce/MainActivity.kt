@@ -1,5 +1,7 @@
 package com.fathan.e_commerce
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -13,10 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.fathan.e_commerce.data.UserPreferences
+import com.fathan.e_commerce.data.utils.extractTokenFromIntent
 import com.fathan.e_commerce.domain.model.CartItem
 import com.fathan.e_commerce.domain.model.DummyData
 import com.fathan.e_commerce.domain.model.Product
@@ -36,6 +41,7 @@ import com.fathan.e_commerce.ui.profile.ProfileViewModel
 import com.fathan.e_commerce.ui.promo.PromoFlashSaleScreen
 import com.fathan.e_commerce.ui.promo.PromoLocalScreen
 import com.fathan.e_commerce.ui.promo.PromoScreen
+import com.fathan.e_commerce.ui.reset_password.ResetPasswordScreen
 import com.fathan.e_commerce.ui.search.SearchScreen
 import com.fathan.e_commerce.ui.search.SearchViewModel
 import com.fathan.e_commerce.ui.signup.SignUpScreen
@@ -50,6 +56,7 @@ import kotlin.Int
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private lateinit var navController: NavHostController
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +64,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ECommerceTheme {
-                val navController = rememberNavController()
+                navController = rememberNavController()
+
+                LaunchedEffect(Unit) {
+                    handleIntentIfDeepLink(intent)
+                }
 
                 val mainViewModel: MainViewModel = hiltViewModel()
 
@@ -117,9 +128,30 @@ class MainActivity : ComponentActivity() {
                         composable(Screen.ForgotPassword.route) {
                             ForgotPasswordScreen(
                                 onBackClick = { navController.popBackStack() },
-                                onSubmit = { email ->}
                             )
                         }
+
+                        composable(
+                            route = "reset_password?token={token}",
+                            arguments = listOf(navArgument("token") {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            }),
+                            deepLinks = listOf(navDeepLink { uriPattern = "myapp://reset-password?access_token={token}" })
+                        ) { backStackEntry ->
+                            val tokenArg = backStackEntry.arguments?.getString("token")
+                            ResetPasswordScreen(
+                                token = tokenArg,
+                                onDone = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(Screen.Login.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+
 
                         composable(Screen.Home.route) {
                             // ✅ Created here
@@ -215,7 +247,6 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-// Make sure this block exists right below it (as you had in your selection)
                         composable(Screen.ChatDetail.route) {
                             ChatDetailScreen(
                                 onBack = { navController.popBackStack() }
@@ -256,7 +287,6 @@ class MainActivity : ComponentActivity() {
 
 
                         composable(Screen.Profile.route) {
-                            // ✅ Created here
                             val profileVM: ProfileViewModel = hiltViewModel()
 
                             ProfileScreen(
@@ -278,6 +308,11 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onWishlistClick = {
                                     navController.navigate(Screen.Wishlist.route)
+                                },
+                                onLogoutNavigateToLogin = {
+                                    navController.navigate(Screen.Login.route) {
+                                        popUpTo(0)
+                                    }
                                 }
                             )
                         }
@@ -286,8 +321,6 @@ class MainActivity : ComponentActivity() {
                             route = Screen.Detail.route,
                             arguments = listOf(navArgument("productId") { type = NavType.IntType })
                         ) { backStackEntry ->
-                            // ✅ This is CRITICAL.
-                            // Creating the VM here ensures it gets the arguments from backStackEntry automatically via SavedStateHandle
                             val detailVM: ProductDetailViewModel = hiltViewModel()
 
                             val productId = backStackEntry.arguments?.getInt("productId") ?: 0
@@ -304,9 +337,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // ... di dalam NavHost
 
-// Route untuk Detail Koleksi Wishlist
                         composable(
                             route = "wishlist_detail/{collectionName}", // Definisikan argument
                             arguments = listOf(navArgument("collectionName") { type = NavType.StringType })
@@ -339,6 +370,42 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun handleIntentIfDeepLink(intent: Intent?) {
+        val token = extractTokenFromIntent(intent)
+        if (!token.isNullOrBlank()) {
+            // navigate to reset screen with token
+            navigateToReset(token)
+        } else {
+            Log.d("MainActivity", "handleIntent: no token found")
+        }
+    }
+
+    private fun navigateToReset(token: String) {
+        val encoded = Uri.encode(token)
+        val route = "reset_password?token=$encoded"
+
+        navController.navigate(route) {
+            launchSingleTop = true
+            restoreState = false
+            popUpTo(navController.graph.startDestinationId) {
+                inclusive = false
+            }
+        }
+
+    }
+
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.let {
+            if (::navController.isInitialized) {
+                navController.handleDeepLink(it)
+            } else {
+                Log.w("MainActivity", "navController not initialized yet - deep link ignored")
             }
         }
     }
