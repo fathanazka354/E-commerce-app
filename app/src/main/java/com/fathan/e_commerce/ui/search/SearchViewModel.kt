@@ -1,14 +1,19 @@
 package com.fathan.e_commerce.ui.search
 
 import androidx.lifecycle.ViewModel
-import com.fathan.e_commerce.domain.model.Product
+import androidx.lifecycle.viewModelScope
+import com.fathan.e_commerce.domain.entities.product.Product
+import com.fathan.e_commerce.domain.usecase.products.SearchProductsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import javax.inject.Inject   // ➜ tambahkan ini
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
-class SearchViewModel @Inject constructor() : ViewModel() {   // ➜ @Inject constructor
+class SearchViewModel @Inject constructor(
+    private val searchProductsUseCase: SearchProductsUseCase
+) : ViewModel() {
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
@@ -16,14 +21,17 @@ class SearchViewModel @Inject constructor() : ViewModel() {   // ➜ @Inject con
     private val _result = MutableStateFlow<List<Product>>(emptyList())
     val result: StateFlow<List<Product>> = _result
 
-    fun updateQuery(text: String, allProducts: List<Product>) {
+    fun updateQuery(text: String, sellerId: Long? = null) {
         _query.value = text
+        if (text.isBlank()) {
+            _result.value = emptyList()
+            return
+        }
 
-        _result.value =
-            if (text.isBlank()) emptyList()
-            else allProducts.filter {
-                it.name.contains(text, ignoreCase = false) ||
-                        it.brand.contains(text, false)
-            }
+        viewModelScope.launch {
+            val res = searchProductsUseCase(text, sellerId)
+            if (res.isSuccess) _result.value = res.getOrNull().orEmpty()
+            else _result.value = emptyList()
+        }
     }
 }

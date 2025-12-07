@@ -1,36 +1,44 @@
 package com.fathan.e_commerce.data.remote
 
+import android.util.Log
 import com.fathan.e_commerce.BuildConfig
-import com.fathan.e_commerce.data.models.RecoverRequest
-import com.fathan.e_commerce.data.models.auth.CreateUserWithRelationsParams
 import com.fathan.e_commerce.data.models.auth.IdOnly
-import com.fathan.e_commerce.data.models.auth.UserInfo
+import com.fathan.e_commerce.data.remote.api.RecoverRequest
+import com.fathan.e_commerce.data.remote.api.SupabaseApi
+import com.fathan.e_commerce.data.remote.api.UpdatePasswordRequest
+import com.fathan.e_commerce.data.remote.api.UserResponse
+import com.fathan.e_commerce.data.models.auth.CreateUserWithRelationsParams
 import com.fathan.e_commerce.domain.entities.auth.AccountType
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.rpc
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.android.Android
-import io.ktor.client.request.get
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.put
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.contentType
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 
-class SupabaseUserRemoteDataSource @Inject constructor(
-    private val postgrest: Postgrest
-) {
+interface UserRemoteDataSource {
     suspend fun createUserWithRelations(
+        name: String,
+        email: String,
+        hashedPassword: String,
+        accountType: AccountType
+    ): Long
+
+    suspend fun sendPasswordRecoveryEmail(email: String, redirectTo: String? = null): Result<Unit>
+
+    suspend fun verifyRecoveryTokenFromURL(accessToken: String): Result<SessionInfo>
+
+    suspend fun updatePasswordWithAccessToken(accessToken: String, newPassword: String): Result<Unit>
+
+    suspend fun findUserByEmail(email: String): Result<Boolean>
+
+    suspend fun updateUsersTablePassword(email: String, hashedPassword: String): Result<Unit>
+}
+
+class SupabaseUserRemoteDataSource @Inject constructor(
+    private val postgrest: Postgrest,
+    private val api: SupabaseApi
+) : UserRemoteDataSource {
+
+    override suspend fun createUserWithRelations(
         name: String,
         email: String,
         hashedPassword: String,
@@ -53,117 +61,124 @@ class SupabaseUserRemoteDataSource @Inject constructor(
             parameters = params
         )
 
-        val userId: Long = result.decodeAs()
-
-        return userId
+        return result.decodeAs()
     }
 
-    private val client = HttpClient(Android)
+    private val anonKeyHeader = BuildConfig.SUPABASE_ANON_KEY
+    private val apiKeyHeader = BuildConfig.SUPABASE_ANON_KEY
+    private val baseRedirect = BuildConfig.MY_DEPLOYED_URL
 
-    suspend fun sendPasswordRecoveryEmail(email: String, redirectTo: String? = null): Result<Unit> {
-        val url = "${BuildConfig.SUPABASE_URL}/auth/v1/recover"
-        val redir = BuildConfig.MY_DEPLOYED_URL
-
-        val body = RecoverRequest(email = email, redirect_to = redir)
+    override suspend fun sendPasswordRecoveryEmail(email: String, redirectTo: String?): Result<Unit> {
         return try {
-            val resp: HttpResponse = client.post(url) {
-                contentType(ContentType.Application.Json)
-                header(HttpHeaders.Accept, "application/json")
-                header("apikey", BuildConfig.SUPABASE_ANON_KEY)
-                header(HttpHeaders.Authorization, "Bearer ${BuildConfig.SUPABASE_ANON_KEY}")
-                setBody(Json.encodeToString(body))
+            val body = RecoverRequest(email = email, redirect_to = redirectTo ?: baseRedirect)
+            val resp = api.sendRecoverEmail(
+                apiKeyHeader,
+                "Bearer $anonKeyHeader",
+                body
+            )
+
+            if (resp.isSuccessful) Result.success(Unit)
+            else {
+                val err = "Recover failed: ${resp.code()} ${resp.errorBody()?.string()}"
+                Log.e(TAG, err)
+                Result.failure(Exception(err))
             }
-            if (resp.status.value in 200..299) Result.success(Unit)
-            else Result.failure(Exception("Recover failed: ${resp.status.value}: ${resp.bodyAsText()}"))
         } catch (t: Throwable) {
+            Log.e(TAG, "sendPasswordRecoveryEmail error", t)
             Result.failure(t)
         }
     }
 
-    suspend fun getUserFromToken(accessToken: String): Result<UserInfo> {
-        val url = "${BuildConfig.SUPABASE_URL}/auth/v1/user"
+    override suspend fun verifyRecoveryTokenFromURL(accessToken: String): Result<SessionInfo> {
         return try {
-            val resp: HttpResponse = client.get(url) {
-                header(HttpHeaders.Accept, "application/json")
-                header("apikey", BuildConfig.SUPABASE_ANON_KEY)
-                header(HttpHeaders.Authorization, "Bearer $accessToken")
+            Log.d(TAG, "verifyRecoveryTokenFromURL")
+            val resp = api.getUser(apiKeyHeader, "Bearer $accessToken")
+
+            if (!resp.isSuccessful) {
+                val err = "Get user failed: ${resp.code()} ${resp.errorBody()?.string()}"
+                Log.e(TAG, err)
+                return Result.failure(Exception(err))
             }
-            if (resp.status.value in 200..299) {
-                val body = resp.bodyAsText()
-                val json = Json.parseToJsonElement(body).jsonObject
-                val id = json["id"]?.jsonPrimitive?.content
-                val email = json["email"]?.jsonPrimitive?.content
-                if (!id.isNullOrBlank() && !email.isNullOrBlank()) {
-                    Result.success(UserInfo(
-                        id = id, email = email,
-                    ))
-                } else {
-                    Result.failure(Exception("Cannot parse user from token response: $body"))
-                }
-            } else {
-                Result.failure(Exception("Get user failed: ${resp.status.value}: ${resp.bodyAsText()}"))
+
+            val body: UserResponse? = resp.body()
+            if (body == null || body.id.isBlank()) {
+                return Result.failure(Exception("Invalid user response"))
             }
+
+            Result.success(
+                SessionInfo(
+                    userId = body.id,
+                    email = body.email,
+                    accessToken = accessToken,
+                    refreshToken = null
+                )
+            )
         } catch (t: Throwable) {
+            Log.e(TAG, "verifyRecoveryTokenFromURL error", t)
             Result.failure(t)
         }
     }
 
-    suspend fun findUserByEmail(email: String): Result<Boolean> {
+    override suspend fun updatePasswordWithAccessToken(accessToken: String, newPassword: String): Result<Unit> {
+        return try {
+            Log.d(TAG, "updatePasswordWithAccessToken")
+            val body = UpdatePasswordRequest(password = newPassword)
+            val resp = api.updateUserPassword(apiKeyHeader, "Bearer $accessToken", body)
+
+            if (resp.isSuccessful) Result.success(Unit)
+            else {
+                val err = "Update password failed: ${resp.code()} ${resp.errorBody()?.string()}"
+                Log.e(TAG, err)
+                Result.failure(Exception(err))
+            }
+        } catch (t: Throwable) {
+            Log.e(TAG, "updatePasswordWithAccessToken error", t)
+            Result.failure(t)
+        }
+    }
+
+    override suspend fun findUserByEmail(email: String): Result<Boolean> {
         return try {
             val list: List<IdOnly> = postgrest
                 .from("users")
                 .select(columns = Columns.list("id")) {
-                    filter {
-                        eq("email", email)
-                    }
+                    filter { eq("email", email) }
                 }
                 .decodeList()
 
             Result.success(list.isNotEmpty())
         } catch (e: Exception) {
+            Log.e(TAG, "findUserByEmail error", e)
             Result.failure(e)
         }
     }
 
-
-    suspend fun updateUsersTablePassword(
-        email: String,
-        hashedPassword: String
-    ): Result<Unit> {
+    override suspend fun updateUsersTablePassword(email: String, hashedPassword: String): Result<Unit> {
         return try {
             postgrest
                 .from("users")
-                .update(
-                    {
-                        set("password", hashedPassword)
-                    }
-                ) {
-                    filter {
-                        eq("email", email)
-                    }
+                .update({
+                    set("password", hashedPassword)
+                }) {
+                    filter { eq("email", email) }
                 }
 
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "updateUsersTablePassword error", e)
             Result.failure(e)
         }
     }
 
-
-    suspend fun updatePasswordWithToken(accessToken: String, newPassword: String): Result<Unit> {
-        val url = "${BuildConfig.SUPABASE_URL}/auth/v1/user"
-        return try {
-            val resp: HttpResponse = client.put(url) {
-                contentType(ContentType.Application.Json)
-                header(HttpHeaders.Accept, "application/json")
-                header("apikey", BuildConfig.SUPABASE_ANON_KEY)
-                header(HttpHeaders.Authorization, "Bearer $accessToken")
-                setBody(Json.encodeToString(mapOf("password" to newPassword)))
-            }
-            if (resp.status.value in 200..299) Result.success(Unit)
-            else Result.failure(Exception("Update password failed: ${resp.status.value}: ${resp.bodyAsText()}"))
-        } catch (t: Throwable) {
-            Result.failure(t)
-        }
+    companion object {
+        private const val TAG = "SupabaseUserRemoteDS"
     }
 }
+
+/** Session DTO kept inside same file for convenience **/
+data class SessionInfo(
+    val userId: String,
+    val email: String?,
+    val accessToken: String,
+    val refreshToken: String?
+)

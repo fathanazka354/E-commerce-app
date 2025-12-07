@@ -1,5 +1,6 @@
 package com.fathan.e_commerce.ui.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fathan.e_commerce.data.UserPreferences

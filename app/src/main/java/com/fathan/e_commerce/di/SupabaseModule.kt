@@ -1,6 +1,8 @@
 package com.fathan.e_commerce.di
 
 import com.fathan.e_commerce.BuildConfig
+import com.fathan.e_commerce.data.remote.api.RetrofitProvider
+import com.fathan.e_commerce.data.remote.api.SupabaseApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,7 +21,11 @@ object SupabaseModule {
     
     private const val SUPABASE_URL = BuildConfig.SUPABASE_URL
     private const val SUPABASE_ANON_KEY = BuildConfig.SUPABASE_ANON_KEY
-    
+
+    @Provides
+    @Singleton
+    fun provideSupabaseApi(): SupabaseApi = RetrofitProvider.create(SUPABASE_URL)
+
     @Provides
     @Singleton
     fun provideSupabaseClient(): SupabaseClient {

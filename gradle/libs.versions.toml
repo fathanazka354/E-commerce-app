@@ -23,6 +23,10 @@ credentialsPlayServicesAuth = "1.5.0"
 googleid = "1.1.1"
 supabase = "2.5.2"
 ktor = "2.3.12" # atau versi stabil terbaru 2.3.x
+retrofit = "2.9.0"
+logInterceptor = "4.9.3"
+serializationJson = "1.5.0"
+converterSerialization = "1.0.0"
 
 
 [libraries]
@@ -64,6 +68,10 @@ supabase-gotrue = { group = "io.github.jan-tennert.supabase", name = "gotrue-kt"
 supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" } # Untuk upload file
 supabase-realtime = { group = "io.github.jan-tennert.supabase", name = "realtime-kt" } # Untuk fitur realtime/chat
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "logInterceptor" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
+converter-kotlinx-serialization = { group = "com.jakewharton.retrofit", name = "retrofit2-kotlinx-serialization-converter", version.ref = "converterSerialization" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

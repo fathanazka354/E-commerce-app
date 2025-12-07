@@ -20,9 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fathan.e_commerce.domain.entities.product.Category
+import com.fathan.e_commerce.domain.entities.product.FlashSaleWithProduct
 import com.fathan.e_commerce.ui.components.BottomTab
-import com.fathan.e_commerce.domain.model.Category
-import com.fathan.e_commerce.domain.model.Product
 import com.fathan.e_commerce.ui.theme.BluePrimary
 import com.fathan.e_commerce.ui.theme.BlueSoftBackground
 import com.fathan.e_commerce.ui.theme.CardWhite
@@ -32,9 +32,8 @@ import com.fathan.e_commerce.ui.theme.TextSecondary
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel,
-    categories: List<Category>,
     onHomeClick: () -> Unit,
-    onProductClick: (Product) -> Unit,
+    onProductClick: (FlashSaleWithProduct) -> Unit,
     onSearchClick: () -> Unit,
     onCartClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -43,6 +42,10 @@ fun HomeScreen(
     onPromoClick: () -> Unit,
 ) {
     val products by homeViewModel.products.collectAsState()
+    val categories by homeViewModel.categories.collectAsState()
+
+    val promoItems by homeViewModel.flashDeals.collectAsState()
+
 
     Scaffold(
         containerColor = BlueSoftBackground,
@@ -68,8 +71,6 @@ fun HomeScreen(
                 bottom = paddingValues.calculateBottomPadding() + 24.dp // Extra 24dp untuk safety
             )
         ) {
-            // Top spacing
-//            item { Spacer(Modifier.height(12.dp)) }
 
             // Search + Icons Row
             item {
@@ -220,7 +221,7 @@ fun HomeScreen(
             }
 
             // Products List
-            items(products) { product ->
+            items(promoItems) { product ->
                 ProductCard(
                     product = product,
                     onClick = { onProductClick(product) }
@@ -293,7 +294,7 @@ fun CategoryCard(category: Category) {
 }
 
 @Composable
-fun ProductCard(product: Product, onClick: () -> Unit) {
+fun ProductCard(product: FlashSaleWithProduct, onClick: () -> Unit) {
     Surface(
         color = CardWhite,
         shape = RoundedCornerShape(16.dp),
@@ -315,7 +316,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = product.name.take(1),
+                    text = product.product.name.take(1),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = BluePrimary
@@ -329,20 +330,20 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = product.name,
+                    text = product.product.name,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 16.sp,
                     color = Color.Black
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    text = product.brand,
+                    text = product.product.brand,
                     fontSize = 14.sp,
                     color = TextSecondary
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "$${product.price}",
+                    text = "$${product.product.price}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
                     color = Color.Black
@@ -359,7 +360,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                 )
                 Spacer(Modifier.width(4.dp))
                 Text(
-                    text = product.rating.toString(),
+                    text = product.product.rating.toString(),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.Black

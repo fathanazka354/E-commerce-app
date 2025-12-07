@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.fathan.e_commerce.data.local.FavoriteDao
 import com.fathan.e_commerce.data.local.WishlistDao
+import com.fathan.e_commerce.data.remote.ProductRemoteDataSource
 import com.fathan.e_commerce.data.remote.SupabaseUserRemoteDataSource
 import com.fathan.e_commerce.data.repository.AuthRepositoryImpl
 import com.fathan.e_commerce.data.repository.ChatRepositoryImpl
@@ -22,9 +23,13 @@ import com.fathan.e_commerce.domain.usecase.chats.GetMessagesUseCase
 import com.fathan.e_commerce.domain.usecase.chats.SendAudioMessageUseCase
 import com.fathan.e_commerce.domain.usecase.chats.SendImageMessageUseCase
 import com.fathan.e_commerce.domain.usecase.chats.SendTextMessageUseCase
+import com.fathan.e_commerce.domain.usecase.products.GetCategoriesUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetFavoritesUseCase
+import com.fathan.e_commerce.domain.usecase.products.GetFlashSaleUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCase
+import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCaseV2
 import com.fathan.e_commerce.domain.usecase.products.IsFavoriteUseCase
+import com.fathan.e_commerce.domain.usecase.products.SearchProductsUseCase
 import com.fathan.e_commerce.domain.usecase.products.ToggleFavoriteUseCase
 import dagger.Module
 import dagger.Provides
@@ -96,13 +101,39 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideProductRepository(): ProductRepository = ProductRepositoryImpl()
+    fun provideProductRepository(
+        remoteDataSource: ProductRemoteDataSource
+    ): ProductRepository = ProductRepositoryImpl(remoteDataSource)
 
     @Provides
     @Singleton
     fun provideGetProductsUseCase(
         productRepository: ProductRepository
     ): GetProductsUseCase = GetProductsUseCase(productRepository)
+
+    @Provides
+    @Singleton
+    fun provideGetProductsV2UseCase(
+        productRepository: ProductRepository
+    ): GetProductsUseCaseV2 = GetProductsUseCaseV2(productRepository)
+
+    @Provides
+    @Singleton
+    fun provideGetCategoriesUseCase(
+        productRepository: ProductRepository
+    ): GetCategoriesUseCase = GetCategoriesUseCase(productRepository)
+
+    @Provides
+    @Singleton
+    fun provideFlashSaleItemsUseCase(
+        productRepository: ProductRepository
+    ): GetFlashSaleUseCase = GetFlashSaleUseCase(productRepository)
+
+    @Provides
+    @Singleton
+    fun provideSearchProductsUseCase(
+        productRepository: ProductRepository
+    ): SearchProductsUseCase = SearchProductsUseCase(productRepository)
 
     @Provides
     @Singleton
@@ -135,4 +166,5 @@ object RepositoryModule {
             remoteDataSource = remoteDataSource
         )
     }
+
 }

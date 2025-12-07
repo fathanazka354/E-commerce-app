@@ -1,76 +1,105 @@
-// ui/reset_password/ResetPasswordViewModel.kt
 package com.fathan.e_commerce.ui.reset_password
 
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fathan.e_commerce.domain.repository.AuthRepository
 import com.fathan.e_commerce.domain.repository.AuthResult
-import com.fathan.e_commerce.domain.usecase.auth.ResetPasswordUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class ResetUiState(
-    val isLoading: Boolean = false,
-    val successMessage: String? = null,
-    val errorMessage: String? = null
-)
 
 @HiltViewModel
 class ResetPasswordViewModel @Inject constructor(
-    private val resetPasswordUseCase: ResetPasswordUseCase,
-    savedStateHandle: SavedStateHandle
+    private val authRepository: AuthRepository
 ) : ViewModel() {
-
-    val token: String? = savedStateHandle.get<String>("token")
 
     val password = MutableStateFlow("")
     val confirmPassword = MutableStateFlow("")
 
-    private val _uiState = MutableStateFlow(ResetUiState())
-    val uiState: StateFlow<ResetUiState> = _uiState
+    private val _accessToken = MutableStateFlow<String?>(null)
+    private val _refreshToken = MutableStateFlow<String?>(null)
 
-    fun onPasswordChange(v: String) { password.value = v }
-    fun onConfirmPasswordChange(v: String) { confirmPassword.value = v }
+    private val _uiState = MutableStateFlow(ResetPasswordUIState())
+    val uiState: StateFlow<ResetPasswordUIState> = _uiState
 
-    fun submit(onSuccess: () -> Unit = {}) {
-        // local validation
+    // Call this when you extract tokens from URL
+    fun setTokens(accessToken: String, refreshToken: String) {
+        _accessToken.value = accessToken
+        _refreshToken.value = refreshToken
+        Log.d("ResetPasswordVM", "Tokens set - access token length: ${accessToken.length}")
+    }
+
+    fun onPasswordChange(value: String) {
+        password.value = value
+    }
+
+    fun onConfirmPasswordChange(value: String) {
+        confirmPassword.value = value
+    }
+
+    fun submit(onSuccess: () -> Unit) {
+        val pw = password.value
+        val cpw = confirmPassword.value
+        val token = _accessToken.value
+
+        // Validation
         if (token.isNullOrBlank()) {
-            _uiState.value = ResetUiState(errorMessage = "Token tidak ditemukan. Buka link dari email yang sama.")
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Invalid or expired reset link"
+            )
             return
         }
 
-        val p = password.value.trim()
-        val cp = confirmPassword.value.trim()
-
-        if (p.length < 8) {
-            _uiState.value = ResetUiState(errorMessage = "Password minimal 8 karakter")
+        if (pw.isBlank()) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Password tidak boleh kosong"
+            )
             return
         }
-        if (p != cp) {
-            _uiState.value = ResetUiState(errorMessage = "Password dan konfirmasi tidak cocok")
+
+        if (pw.length < 8) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Password minimal 8 karakter"
+            )
+            return
+        }
+
+        if (pw != cpw) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "Password tidak cocok"
+            )
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = ResetUiState(isLoading = true)
-            resetPasswordUseCase(token, p).apply {
-                Log.d("TAG", "resetPasswordWithToken: HAHAH $this")
-                if (this is AuthResult.Success) {
-                    _uiState.value = ResetUiState(successMessage = "Password berhasil diubah")
-                    // optional callback to navigate away
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            when (val result = authRepository.resetPasswordWithToken(token, pw)) {
+                is AuthResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        successMessage = "Password berhasil diubah! Silakan login."
+                    )
                     onSuccess()
-                } else {
-                    _uiState.value = ResetUiState(errorMessage = "Gagal memperbarui password")
+                }
+                is AuthResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.message
+                    )
                 }
             }
         }
     }
-
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
-    }
 }
+
+data class ResetPasswordUIState(
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val successMessage: String? = null
+)

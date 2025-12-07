@@ -103,12 +103,24 @@ dependencies {
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
 
+//    implementation(libs.ktor.client.android)
+    implementation(libs.logging.interceptor)
+    implementation(libs.retrofit)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.converter.kotlinx.serialization)
     // Supabase
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.gotrue)
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.storage)
     implementation(libs.supabase.realtime)
+//    implementation(platform(libs.supabase.bom))
+
+//    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+//    implementation("io.github.jan-tennert.supabase:gotrue-kt")
+//    implementation("io.github.jan-tennert.supabase:storage-kt")
+//    implementation("io.github.jan-tennert.supabase:realtime-kt")
+
 
     // HTTP engine
     implementation(libs.ktor.client.android)
