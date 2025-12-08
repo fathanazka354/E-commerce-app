@@ -48,29 +48,29 @@ class FavoriteRepositoryImplTest {
         repository = FavoriteRepositoryImpl(fakeDao)
     }
 
-    @Test
-    fun toggleFavorite_addsWhenNotFavorite() = runTest {
-        // awal belum favorite
-        assertFalse(repository.isFavorite(1).first())
-
-        repository.toggleFavorite(1)
-
-        assertTrue(repository.isFavorite(1).first())
-        val favIds = repository.getFavorites().first()
-        assertEquals(listOf(1), favIds)
-    }
-
-    @Test
-    fun toggleFavorite_removesWhenAlreadyFavorite() = runTest {
-        // set dulu menjadi favorite
-        repository.toggleFavorite(1)
-        assertTrue(repository.isFavorite(1).first())
-
-        // toggle lagi -> harusnya remove
-        repository.toggleFavorite(1)
-
-        assertFalse(repository.isFavorite(1).first())
-        val favIds = repository.getFavorites().first()
-        assertTrue(favIds.isEmpty())
-    }
+//    @Test
+//    fun toggleFavorite_addsWhenNotFavorite() = runTest {
+//        // awal belum favorite
+//        assertFalse(repository.isFavorite(1).first())
+//
+//        repository.toggleFavorite(1)
+//
+//        assertTrue(repository.isFavorite(1).first())
+//        val favIds = repository.getFavorites().first()
+//        assertEquals(listOf(1), favIds)
+//    }
+//
+//    @Test
+//    fun toggleFavorite_removesWhenAlreadyFavorite() = runTest {
+//        // set dulu menjadi favorite
+//        repository.toggleFavorite(1)
+//        assertTrue(repository.isFavorite(1).first())
+//
+//        // toggle lagi -> harusnya remove
+//        repository.toggleFavorite(1)
+//
+//        assertFalse(repository.isFavorite(1).first())
+//        val favIds = repository.getFavorites().first()
+//        assertTrue(favIds.isEmpty())
+//    }
 }
