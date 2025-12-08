@@ -9,46 +9,45 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.fathan.e_commerce.domain.model.CartItem
-import com.fathan.e_commerce.domain.model.DummyData
-import com.fathan.e_commerce.domain.model.Product
-import com.fathan.e_commerce.ui.checkout.CheckoutScreen
-import com.fathan.e_commerce.ui.home.HomeScreen
-import com.fathan.e_commerce.ui.login.LoginScreen
-import com.fathan.e_commerce.ui.product.ProductDetailScreen
-import com.fathan.e_commerce.ui.profile.ProfileScreen
-import com.fathan.e_commerce.ui.Screen
-import com.fathan.e_commerce.ui.chat.ChatDetailScreen
-import com.fathan.e_commerce.ui.chat.ChatScreen
-import com.fathan.e_commerce.ui.forgot_password.ForgotPasswordScreen
-import com.fathan.e_commerce.ui.home.HomeViewModel
-import com.fathan.e_commerce.ui.login.LoginViewModel
-import com.fathan.e_commerce.ui.product.ProductDetailViewModel
-import com.fathan.e_commerce.ui.profile.ProfileViewModel
-import com.fathan.e_commerce.ui.promo.PromoFlashSaleScreen
-import com.fathan.e_commerce.ui.promo.PromoLocalScreen
-import com.fathan.e_commerce.ui.promo.PromoScreen
-import com.fathan.e_commerce.ui.reset_password.ResetPasswordScreen
-import com.fathan.e_commerce.ui.search.SearchScreen
-import com.fathan.e_commerce.ui.search.SearchViewModel
-import com.fathan.e_commerce.ui.signup.SignUpScreen
-import com.fathan.e_commerce.ui.theme.ECommerceTheme
-import com.fathan.e_commerce.ui.transaction.TransactionScreen
-import com.fathan.e_commerce.ui.wishlist.WishlistCollectionDetailScreen
-import com.fathan.e_commerce.ui.wishlist.WishlistScreen
-import com.fathan.e_commerce.ui.wishlist.WishlistViewModel
+import com.fathan.e_commerce.features.checkout.CheckoutScreen
+import com.fathan.e_commerce.features.home.HomeScreen
+import com.fathan.e_commerce.features.login.LoginScreen
+import com.fathan.e_commerce.features.product.ui.ProductDetailScreen
+import com.fathan.e_commerce.features.profile.ProfileScreen
+import com.fathan.e_commerce.features.Screen
+import com.fathan.e_commerce.features.chat.ChatDetailScreen
+import com.fathan.e_commerce.features.chat.ChatScreen
+import com.fathan.e_commerce.features.forgot_password.ForgotPasswordScreen
+import com.fathan.e_commerce.features.home.HomeViewModel
+import com.fathan.e_commerce.features.login.LoginViewModel
+import com.fathan.e_commerce.features.product.ui.ProductDetailUiState
+import com.fathan.e_commerce.features.product.ui.ProductDetailViewModel
+import com.fathan.e_commerce.features.profile.ProfileViewModel
+import com.fathan.e_commerce.features.promo.PromoFlashSaleScreen
+import com.fathan.e_commerce.features.promo.PromoLocalScreen
+import com.fathan.e_commerce.features.promo.PromoScreen
+import com.fathan.e_commerce.features.reset_password.ResetPasswordScreen
+import com.fathan.e_commerce.features.search.SearchScreen
+import com.fathan.e_commerce.features.search.SearchViewModel
+import com.fathan.e_commerce.features.signup.SignUpScreen
+import com.fathan.e_commerce.features.theme.ECommerceTheme
+import com.fathan.e_commerce.features.transaction.TransactionScreen
+import com.fathan.e_commerce.features.wishlist.WishlistCollectionDetailScreen
+import com.fathan.e_commerce.features.wishlist.WishlistScreen
+import com.fathan.e_commerce.features.wishlist.WishlistViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
-// Token holder object to pass data between Activity and Composables
 object TokenHolder {
     var accessToken: String? = null
     var refreshToken: String? = null
@@ -63,298 +62,45 @@ object TokenHolder {
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private lateinit var navController: NavHostController
+
+    private val TAG = "MainActivity"
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Handle deep link from intent
+        // handle initial deep link
         handleDeepLink(intent)
 
         setContent {
             ECommerceTheme {
-                navController = rememberNavController()
+                val navController = rememberNavController()
+
+                // FIX: provide plain List as initial value (not mutableStateOf)
+                var cartItems = emptyList<CartItem>()      // Alternative correct init:
+                // var cartItems by rememberSaveable(saver = CartItemListSaver) { listOf<CartItem>() }
+
+                // Main VM
                 val mainViewModel: MainViewModel = hiltViewModel()
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
-                var cartItems by remember { mutableStateOf(listOf<CartItem>()) }
 
-                fun addToCart(product: Product, color: String?, storage: String?) {
-                    val existing = cartItems.find {
-                        it.product.id == product.id &&
-                                it.selectedColor == color &&
-                                it.selectedStorage == storage
-                    }
-                    cartItems = if (existing != null) {
-                        cartItems.map {
-                            if (it == existing) it.copy(quantity = it.quantity + 1) else it
-                        }
-                    } else {
-                        cartItems + CartItem(product, 1, color, storage)
-                    }
-                }
-
-                // Check if we should navigate to reset password
-                LaunchedEffect(TokenHolder.shouldNavigateToReset) {
+                // If deep link set shouldNavigateToReset, navigate once when nav is ready
+                LaunchedEffect(navController, TokenHolder.shouldNavigateToReset) {
                     if (TokenHolder.shouldNavigateToReset) {
-                        Log.d("MainActivity", "Navigating to reset password screen")
-                        navController.navigate("reset-password") {
-                            // Clear back stack
-                            popUpTo(navController.graph.startDestinationId) {
-                                inclusive = false
-                            }
+                        Log.d(TAG, "Navigate to reset-password due to deep link")
+                        navController.safeNavigate("reset-password") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = false }
                         }
                         TokenHolder.shouldNavigateToReset = false
                     }
                 }
 
-                Scaffold { innerPadding ->
-                    NavHost(
-                        navController = navController,
-                        startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
-                        composable(Screen.Login.route) {
-                            val loginVM: LoginViewModel = hiltViewModel()
-                            LoginScreen(
-                                loginViewModel = loginVM,
-                                onLoginSuccess = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(0)
-                                    }
-                                },
-                                onSignUpClick = {
-                                    navController.navigate(Screen.SignUp.route)
-                                },
-                                onForgotPasswordClick = {
-                                    navController.navigate(Screen.ForgotPassword.route)
-                                }
-                            )
-                        }
-
-                        composable(Screen.SignUp.route) {
-                            SignUpScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onAlreadyHaveAccountClick = { navController.popBackStack() },
-                                onSignUpSuccess = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(0)
-                                    }
-                                }
-                            )
-                        }
-
-                        composable(Screen.ForgotPassword.route) {
-                            ForgotPasswordScreen(
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-
-                        // FIXED: Reset password route
-                        composable("reset-password") {
-                            val accessToken = TokenHolder.accessToken ?: ""
-                            val refreshToken = TokenHolder.refreshToken ?: ""
-
-                            Log.d("MainActivity", "ResetPassword Composable - Token: ${accessToken.take(20)}...")
-
-                            ResetPasswordScreen(
-                                accessToken = accessToken,
-                                refreshToken = refreshToken,
-                                onDone = {
-                                    TokenHolder.clear()
-                                    navController.navigate(Screen.Login.route) {
-                                        popUpTo(0)
-                                    }
-                                },
-                                onBackToLoginClick = {
-                                    TokenHolder.clear()
-                                    navController.navigate(Screen.Login.route) {
-                                        popUpTo(0)
-                                    }
-                                }
-                            )
-                        }
-
-                        composable(Screen.Home.route) {
-                            val homeVM: HomeViewModel = hiltViewModel()
-                            HomeScreen(
-                                homeViewModel = homeVM,
-                                onProductClick = { product ->
-                                    navController.navigate(Screen.Detail.createRoute(product.product.id))
-                                },
-                                onSearchClick = {
-                                    navController.navigate(Screen.Search.route)
-                                },
-                                onCartClick = {
-                                    navController.navigate(Screen.Checkout.route)
-                                },
-                                onProfileClick = {
-                                    navController.navigate(Screen.Profile.route)
-                                },
-                                onHomeClick = {
-                                    navController.navigate(Screen.Home.route)
-                                },
-                                onChatClick = {
-                                    navController.navigate(Screen.Chat.route)
-                                },
-                                onTransactionClick = {
-                                    navController.navigate(Screen.Transaction.route)
-                                },
-                                onPromoClick = {
-                                    navController.navigate(Screen.Promo.route)
-                                }
-                            )
-                        }
-
-                        composable(Screen.Search.route) {
-                            val searchVM: SearchViewModel = hiltViewModel()
-                            SearchScreen(
-                                searchViewModel = searchVM,
-                                onBack = { navController.popBackStack() },
-                                onProductClick = { product ->
-                                    navController.navigate(Screen.Detail.createRoute(product.id))
-                                }
-                            )
-                        }
-
-                        composable(Screen.Promo.route) {
-                            PromoScreen(
-                                onHomeClick = { navController.navigate(Screen.Home.route) },
-                                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
-                                onProfileClick = { navController.navigate(Screen.Profile.route) },
-                                onCartClick = { navController.navigate(Screen.Checkout.route) },
-                                onLocalProductClick = { navController.navigate(Screen.LocalProduct.route) },
-                                onFlashSaleClick = { navController.navigate(Screen.FlashSale.route) }
-                            )
-                        }
-
-                        composable(Screen.LocalProduct.route) {
-                            PromoLocalScreen(
-                                onBack = { navController.popBackStack() },
-                                onCartClick = { navController.navigate(Screen.Checkout.route) }
-                            )
-                        }
-
-                        composable(Screen.FlashSale.route) {
-                            PromoFlashSaleScreen(
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-
-                        composable(Screen.Chat.route) {
-                            ChatScreen(
-                                onBack = { navController.popBackStack() },
-                                onHomeClick = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = false }
-                                    }
-                                },
-                                onProfileClick = { navController.navigate(Screen.Profile.route) },
-                                onChatClick = { navController.navigate(Screen.ChatDetail.route) },
-                                onTransactionClick = { navController.navigate(Screen.Transaction.route) }
-                            )
-                        }
-
-                        composable(Screen.ChatDetail.route) {
-                            ChatDetailScreen(
-                                onBack = { navController.popBackStack() }
-                            )
-                        }
-
-                        composable(Screen.Transaction.route) {
-                            TransactionScreen(
-                                onHomeClick = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = false }
-                                    }
-                                },
-                                onCartClick = { navController.navigate(Screen.Checkout.route) },
-                                onProfileClick = { navController.navigate(Screen.Profile.route) },
-                                onChatClick = { navController.navigate(Screen.Chat.route) }
-                            )
-                        }
-
-                        composable(Screen.Wishlist.route) {
-                            WishlistScreen(
-                                onBack = { navController.popBackStack() },
-                                onCollectionClick = { id, name ->
-                                    navController.navigate("wishlist_detail/$name")
-                                }
-                            )
-                        }
-
-                        composable(Screen.Profile.route) {
-                            val profileVM: ProfileViewModel = hiltViewModel()
-                            ProfileScreen(
-                                profileViewModel = profileVM,
-                                onBack = { navController.popBackStack() },
-                                onHomeClick = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = false }
-                                    }
-                                },
-                                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
-                                onProfileClick = { navController.navigate(Screen.Profile.route) },
-                                onChatClick = { navController.navigate(Screen.Chat.route) },
-                                onWishlistClick = { navController.navigate(Screen.Wishlist.route) },
-                                onLogoutNavigateToLogin = {
-                                    navController.navigate(Screen.Login.route) {
-                                        popUpTo(0)
-                                    }
-                                }
-                            )
-                        }
-
-                        composable(
-                            route = Screen.Detail.route,
-                            arguments = listOf(navArgument("productId") { type = NavType.IntType })
-                        ) { backStackEntry ->
-                            val detailVM: ProductDetailViewModel = hiltViewModel()
-                            val productId = backStackEntry.arguments?.getInt("productId") ?: 0
-                            val product = DummyData.products.first { it.id == productId }
-
-                            ProductDetailScreen(
-                                productDetailViewModel = detailVM,
-                                product = product,
-                                onBack = { navController.popBackStack() },
-                                onAddToCart = { color, storage ->
-                                    addToCart(product, color, storage)
-                                    navController.navigate(Screen.Checkout.route)
-                                }
-                            )
-                        }
-
-                        composable(
-                            route = "wishlist_detail/{collectionName}",
-                            arguments = listOf(navArgument("collectionName") { type = NavType.StringType })
-                        ) { backStackEntry ->
-                            val collectionName = backStackEntry.arguments?.getString("collectionName") ?: "Wishlist"
-                            val wishlistVM: WishlistViewModel = hiltViewModel()
-
-                            WishlistCollectionDetailScreen(
-                                collectionName = collectionName,
-                                onBack = { navController.popBackStack() },
-                                viewModel = wishlistVM,
-                                onCartClick = { navController.navigate(Screen.Checkout.route) }
-                            )
-                        }
-
-                        composable(Screen.Checkout.route) {
-                            CheckoutScreen(
-                                cartItems = cartItems,
-                                onBack = { navController.popBackStack() },
-                                onRemoveItem = { itemToRemove ->
-                                    cartItems = cartItems.filter { it != itemToRemove }
-                                },
-                                onUpdateQuantity = { item, newQty ->
-                                    cartItems = cartItems.map {
-                                        if (it == item) it.copy(quantity = newQty) else it
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
+                AppNavHost(
+                    navController = navController,
+                    startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route,
+                    cartItems = cartItems,
+                    onCartChanged = { cartItems = it }
+                )
             }
         }
     }
@@ -367,43 +113,271 @@ class MainActivity : ComponentActivity() {
 
     private fun handleDeepLink(intent: Intent?) {
         val data: Uri? = intent?.data
+        if (data == null) {
+            Log.d(TAG, "No deep link present")
+            return
+        }
 
-        if (data != null) {
-            Log.d("MainActivity", "=== DEEP LINK RECEIVED ===")
-            Log.d("MainActivity", "Full URI: $data")
-            Log.d("MainActivity", "Scheme: ${data.scheme}")
-            Log.d("MainActivity", "Host: ${data.host}")
-            Log.d("MainActivity", "Path: ${data.path}")
-            Log.d("MainActivity", "Query: ${data.query}")
+        Log.d(TAG, "Deep link: $data")
+        val scheme = data.scheme
+        val host = data.host
+        val type = data.getQueryParameter("type")
+        val accessToken = data.getQueryParameter("access_token")
+        val refreshToken = data.getQueryParameter("refresh_token")
 
-            // Check if this is the reset password deep link
-            if (data.scheme == "myapp" && data.host == "reset-password") {
-                // Extract tokens from query parameters
-                val accessToken = data.getQueryParameter("access_token")
-                val refreshToken = data.getQueryParameter("refresh_token")
-                val type = data.getQueryParameter("type")
-
-                Log.d("MainActivity", "Type: $type")
-                Log.d("MainActivity", "Access token: ${accessToken?.take(20)}...")
-                Log.d("MainActivity", "Refresh token: ${refreshToken?.take(20)}...")
-
-                if (type == "recovery" && !accessToken.isNullOrBlank()) {
-                    Log.d("MainActivity", "Valid reset password link detected!")
-
-                    // Store tokens
-                    TokenHolder.accessToken = accessToken
-                    TokenHolder.refreshToken = refreshToken ?: ""
-                    TokenHolder.shouldNavigateToReset = true
-
-                    Log.d("MainActivity", "Tokens stored in TokenHolder")
-                } else {
-                    Log.e("MainActivity", "Invalid reset password link - missing token or wrong type")
-                }
-            } else {
-                Log.d("MainActivity", "Not a reset password link")
-            }
+        if (scheme == "myapp" && host == "reset-password" && type == "recovery" && !accessToken.isNullOrBlank()) {
+            TokenHolder.accessToken = accessToken
+            TokenHolder.refreshToken = refreshToken ?: ""
+            TokenHolder.shouldNavigateToReset = true
+            Log.d(TAG, "Parsed reset-password deep link, tokens saved to TokenHolder")
         } else {
-            Log.d("MainActivity", "No deep link data in intent")
+            Log.d(TAG, "Deep link not recognized")
         }
     }
 }
+
+/* Nav host (kept same, but ProductDetailScreen call fixed) */
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun AppNavHost(
+    navController: NavHostController,
+    startDestination: String,
+    cartItems: List<CartItem>,
+    onCartChanged: (List<CartItem>) -> Unit
+) {
+    NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding()) {
+        composable(Screen.Login.route) {
+            val loginVM: LoginViewModel = hiltViewModel()
+            LoginScreen(
+                loginViewModel = loginVM,
+                onLoginSuccess = {
+                    navController.safeNavigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onSignUpClick = { navController.navigate(Screen.SignUp.route) },
+                onForgotPasswordClick = { navController.navigate(Screen.ForgotPassword.route) }
+            )
+        }
+
+        composable(Screen.SignUp.route) {
+            SignUpScreen(
+                onBackClick = { navController.popBackStack() },
+                onAlreadyHaveAccountClick = { navController.popBackStack() },
+                onSignUpSuccess = {
+                    navController.safeNavigate(Screen.Home.route) {
+                        popUpTo(Screen.SignUp.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.ForgotPassword.route) {
+            ForgotPasswordScreen(onBackClick = { navController.popBackStack() })
+        }
+
+        composable("reset-password") {
+            val accessToken = TokenHolder.accessToken ?: ""
+            val refreshToken = TokenHolder.refreshToken ?: ""
+            ResetPasswordScreen(
+                accessToken = accessToken,
+                refreshToken = refreshToken,
+                onDone = {
+                    TokenHolder.clear()
+                    navController.safeNavigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                },
+                onBackToLoginClick = {
+                    TokenHolder.clear()
+                    navController.safeNavigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                }
+            )
+        }
+
+        composable(Screen.Home.route) {
+            val homeVM: HomeViewModel = hiltViewModel()
+            HomeScreen(
+                homeViewModel = homeVM,
+                onProductClick = { productId ->
+                    Log.d("MainActivity", "AppNavHost: ${productId}")
+                    navController.navigate(Screen.Detail.createRoute(productId))
+                },
+                onSearchClick = { navController.navigate(Screen.Search.route) },
+                onCartClick = { navController.navigate(Screen.Checkout.route) },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onHomeClick = { navController.navigate(Screen.Home.route) },
+                onChatClick = { navController.navigate(Screen.Chat.route) },
+                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
+                onPromoClick = { navController.navigate(Screen.Promo.route) }
+            )
+        }
+
+        composable(Screen.Search.route) {
+            val searchVM: SearchViewModel = hiltViewModel()
+            SearchScreen(
+                searchViewModel = searchVM,
+                onBack = { navController.popBackStack() },
+                onProductClick = { p -> navController.navigate(Screen.Detail.createRoute(p.id)) }
+            )
+        }
+
+        composable(Screen.Promo.route) {
+            PromoScreen(
+                onHomeClick = { navController.navigate(Screen.Home.route) },
+                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onCartClick = { navController.navigate(Screen.Checkout.route) },
+                onLocalProductClick = { navController.navigate(Screen.LocalProduct.route) },
+                onFlashSaleClick = { navController.navigate(Screen.FlashSale.route) }
+            )
+        }
+
+        composable(Screen.LocalProduct.route) {
+            PromoLocalScreen(onBack = { navController.popBackStack() }, onCartClick = { navController.navigate(Screen.Checkout.route) })
+        }
+
+        composable(Screen.FlashSale.route) {
+            PromoFlashSaleScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Screen.Chat.route) {
+            ChatScreen(
+                onBack = { navController.popBackStack() },
+                onHomeClick = {
+                    navController.safeNavigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = false } }
+                },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onChatClick = { navController.navigate(Screen.ChatDetail.route) },
+                onTransactionClick = { navController.navigate(Screen.Transaction.route) }
+            )
+        }
+
+        composable(Screen.ChatDetail.route) {
+            ChatDetailScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Screen.Transaction.route) {
+            TransactionScreen(
+                onHomeClick = {
+                    navController.safeNavigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = false } }
+                },
+                onCartClick = { navController.navigate(Screen.Checkout.route) },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onChatClick = { navController.navigate(Screen.Chat.route) }
+            )
+        }
+
+        composable(Screen.Wishlist.route) {
+            WishlistScreen(onBack = { navController.popBackStack() }, onCollectionClick = { id, name ->
+                navController.navigate("wishlist_detail/$name")
+            })
+        }
+
+        composable(
+            route = "wishlist_detail/{collectionName}",
+            arguments = listOf(navArgument("collectionName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val collectionName = backStackEntry.arguments?.getString("collectionName") ?: "Wishlist"
+            val wishlistVM: WishlistViewModel = hiltViewModel()
+            WishlistCollectionDetailScreen(
+                collectionName = collectionName,
+                onBack = { navController.popBackStack() },
+                viewModel = wishlistVM,
+                onCartClick = { navController.navigate(Screen.Checkout.route) }
+            )
+        }
+
+        composable(Screen.Profile.route) {
+            val profileVM: ProfileViewModel = hiltViewModel()
+            ProfileScreen(
+                profileViewModel = profileVM,
+                onBack = { navController.popBackStack() },
+                onHomeClick = {
+                    navController.safeNavigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = false } }
+                },
+                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
+                onProfileClick = { navController.navigate(Screen.Profile.route) },
+                onChatClick = { navController.navigate(Screen.Chat.route) },
+                onWishlistClick = { navController.navigate(Screen.Wishlist.route) },
+                onLogoutNavigateToLogin = {
+                    navController.safeNavigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Detail.route,
+            arguments = listOf(navArgument("productId") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val detailVM: ProductDetailViewModel = hiltViewModel()
+            val productId = backStackEntry.arguments?.getInt("productId") ?: 0
+
+            // Trigger load only when we have a valid productId
+            LaunchedEffect(productId) {
+                if (productId > 0) {
+                    detailVM.loadProduct(productId)   // <-- load here, NOT inside Screen
+                }
+            }
+            // For now we reuse DummyData; in production fetch inside detailVM by productId
+//            val product = DummyData.products.firstOrNull { it.id == productId } ?: DummyData.products.first()
+            val uiState by detailVM.uiState.collectAsState()
+
+            // Product data fallback (for UI that expects a Product object immediately)
+            val product = uiState.product
+            Log.d("MainActivity", "AppNavHost: ${product.name} || ${product.description}")
+            // --- FIX: pass correct params that match your ProductDetailScreen signature ---
+
+            ProductDetailScreen(
+                uiState = uiState,
+                viewModel = detailVM,
+                onBack = { navController.popBackStack() },
+                onAddToCart = { productIdArg, variantId, qty ->
+                    val p = uiState.product
+                    val newItem = CartItem(p, qty, selectedColor = null, selectedStorage = null)
+                    onCartChanged(cartItems + newItem)
+                    navController.navigate(Screen.Checkout.route)
+                },
+                onBuyWithPromo = { _, _, _ ->
+                    navController.navigate(Screen.Checkout.route)
+                },
+                onOpenFeedback = { pid -> /* navigate to feedback list if needed */ },
+                onOpenProduct = { pid -> navController.navigate(Screen.Detail.createRoute(pid)) }
+            )
+        }
+
+        composable(Screen.Checkout.route) {
+            CheckoutScreen(
+                cartItems = cartItems,
+                onBack = { navController.popBackStack() },
+                onRemoveItem = { itemToRemove -> onCartChanged(cartItems.filter { it != itemToRemove }) },
+                onUpdateQuantity = { item, newQty ->
+                    onCartChanged(cartItems.map { if (it == item) it.copy(quantity = newQty) else it })
+                }
+            )
+        }
+    }
+}
+
+/* helper safe navigation to avoid duplicate navigation */
+private fun NavHostController.safeNavigate(route: String, builder: (NavOptionsBuilder.() -> Unit)? = null) {
+    val currentRoute = currentBackStackEntry?.destination?.route
+    if (currentRoute == route) return
+    if (builder == null) navigate(route) else navigate(route, builder)
+}
+
+/* Saver for rememberSaveable cart list (simple) */
+//private val CartItemListSaver = run {
+//    listSaver<List<CartItem>, String>(
+//        save = { list -> listOf(list.joinToString("|") { "${it.product.id},${it.quantity}" }) },
+//        restore = { serialized ->
+//            if (serialized.isEmpty()) return@listSaver emptyList()
+//            val pairs = serialized.toString().split("|")
+//            pairs.mapNotNull {
+//                val parts = it.split(",")
+//                val pid = parts.getOrNull(0)?.toIntOrNull()
+//                val qty = parts.getOrNull(1)?.toIntOrNull() ?: 1
+//                val product = DummyData.products.firstOrNull { p -> p.id == pid } ?: return@mapNotNull null
+//                CartItem(product = product, quantity = qty, selectedColor = null, selectedStorage = null)
+//            }
+//        }
+//    )
+//}

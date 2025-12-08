@@ -26,6 +26,7 @@ import com.fathan.e_commerce.domain.usecase.chats.SendTextMessageUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetCategoriesUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetFavoritesUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetFlashSaleUseCase
+import com.fathan.e_commerce.domain.usecase.products.GetProductDetailUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCase
 import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCaseV2
 import com.fathan.e_commerce.domain.usecase.products.IsFavoriteUseCase
@@ -134,6 +135,12 @@ object RepositoryModule {
     fun provideSearchProductsUseCase(
         productRepository: ProductRepository
     ): SearchProductsUseCase = SearchProductsUseCase(productRepository)
+
+    @Provides
+    @Singleton
+    fun provideProductDetailUseCase(
+        productRepository: ProductRepository
+    ): GetProductDetailUseCase = GetProductDetailUseCase(productRepository)
 
     @Provides
     @Singleton

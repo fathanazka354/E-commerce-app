@@ -14,13 +14,16 @@ fun CategoryDto.toDomain(): Category =
 
 fun ProductDto.toDomain(): Product =
     Product(
-        id = id.toInt(),
+        id = id,
         name = name,
-        brand = brand ?: "",
+//        brand = brand ?: "",
         price = price ?: 0.0,
         storeId = store_id?.toInt() ?: 0,
         sellerId = seller_id?.toInt() ?: 0,
-        rating = (rate ?: 0.0).toFloat()
+        rating = (rate ?: 0.0).toFloat(),
+        thumbnail = thumbnail,
+        description = description,
+        sold = sold
     )
 
 fun FlashSaleDto.toDomain(product: Product? = null): FlashSaleItem =

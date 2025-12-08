@@ -1,7 +1,7 @@
 package com.fathan.e_commerce.viewmodels
 
 import com.fathan.e_commerce.data.UserPreferences
-import com.fathan.e_commerce.ui.login.LoginViewModel
+import com.fathan.e_commerce.features.login.LoginViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*

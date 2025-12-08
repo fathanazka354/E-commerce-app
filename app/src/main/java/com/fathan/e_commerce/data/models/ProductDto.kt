@@ -6,8 +6,10 @@ import kotlinx.serialization.Serializable
 data class ProductDto(
     val id: Int,
     val name: String,
-    val brand: String? = null,
+    val thumbnail: String? = null,
+    val description: String? = null,
     val price: Double? = 0.0,
+    val sold: Int? = 0,
     val store_id: Long? = null,
     val seller_id: Long? = null,
     val rate: Double? = 0.0,
