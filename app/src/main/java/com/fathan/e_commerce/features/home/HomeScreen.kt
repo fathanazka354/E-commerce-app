@@ -59,7 +59,7 @@ fun HomeScreen(
                 onTransactionClick = onTransactionClick
             )
         }
-    ) {
+    ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
