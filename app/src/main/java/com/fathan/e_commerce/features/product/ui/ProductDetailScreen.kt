@@ -59,7 +59,7 @@ fun ProductDetailScreen(
             modifier = Modifier
                 .verticalScroll(scrollState)
                 .fillMaxSize()
-//                .padding(padding)
+                .padding(paddingValues = padding)
         ) {
             ProductImageCarousel(
                 images = uiState.images,

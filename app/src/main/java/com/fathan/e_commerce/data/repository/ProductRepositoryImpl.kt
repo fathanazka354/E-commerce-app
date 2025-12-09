@@ -42,6 +42,8 @@ class ProductRepositoryImpl @Inject constructor(
                 offset = filter.offset
             ).map { it.toDomain() }
 
+            Log.d("ProductRepositoryImpl", "getProducts: ${list.map { it.thumbnail }}")
+
             Result.success(list)
         } catch (t: Throwable) {
             Log.e("ProductRepositoryImpl", "getProducts: ${t.message}")

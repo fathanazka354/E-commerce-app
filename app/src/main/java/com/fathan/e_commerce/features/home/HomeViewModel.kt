@@ -60,16 +60,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun selectCategory(category: Category?) {
-        _selectedCategory.value = category
-        val filter = if (category != null) {
-            ProductFilter(categoryId = category.id, limit = 20)
-        } else {
-            ProductFilter(limit = 20)
-        }
-        loadProductsWithFilter(filter)
-    }
-
     // public API to load products with filter (category, query, seller etc)
     fun loadProductsWithFilter(filter: ProductFilter) {
         viewModelScope.launch {

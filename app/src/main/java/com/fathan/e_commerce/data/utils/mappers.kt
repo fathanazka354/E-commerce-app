@@ -16,7 +16,6 @@ fun ProductDto.toDomain(): Product =
     Product(
         id = id,
         name = name,
-//        brand = brand ?: "",
         price = price ?: 0.0,
         storeId = store_id?.toInt() ?: 0,
         sellerId = seller_id?.toInt() ?: 0,

@@ -3,8 +3,11 @@ package com.fathan.e_commerce.features.home
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -14,12 +17,20 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.fathan.e_commerce.domain.entities.product.Category
+import com.fathan.e_commerce.domain.entities.product.FlashSaleItem
+import com.fathan.e_commerce.domain.entities.product.Product
 import com.fathan.e_commerce.features.components.BottomNavigationBar
 import com.fathan.e_commerce.features.components.BottomTab
 import com.fathan.e_commerce.features.home.ui.components.ShimmerProductGridRows
@@ -119,7 +130,7 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .height(180.dp)
                         .background(
-                            androidx.compose.ui.graphics.Brush.horizontalGradient(
+                            Brush.horizontalGradient(
                                 colors = listOf(
                                     Color(0xFF00C853),
                                     Color(0xFF00ACC1)
@@ -318,7 +329,7 @@ fun DynamicTab(
         modifier = Modifier
             .height(36.dp)
             .clickable(
-                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                interactionSource = remember { MutableInteractionSource() },
                 indication = null
             ) { onClick() }
     ) {
@@ -345,8 +356,8 @@ fun DynamicTab(
 
 @Composable
 fun ProductCard(
-    product: com.fathan.e_commerce.domain.entities.product.Product,
-    flashInfo: com.fathan.e_commerce.domain.entities.product.FlashSaleItem? = null,
+    product: Product,
+    flashInfo: FlashSaleItem? = null,
     onClick: () -> Unit
 ) {
     Card(
@@ -358,7 +369,6 @@ fun ProductCard(
             .clickable { onClick() }
     ) {
         Column {
-            // Image Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -366,10 +376,13 @@ fun ProductCard(
                     .background(Color(0xFFEEEEEE)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = product.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.displayMedium,
-                    color = Color.Gray
+                Image(
+                    painter = rememberAsyncImagePainter(model = product.thumbnail),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,     // FULL COVER
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(10.dp))
                 )
 
                 if (flashInfo != null && flashInfo.stock > 0) {
@@ -413,7 +426,7 @@ fun ProductCard(
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     minLines = 2,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
 

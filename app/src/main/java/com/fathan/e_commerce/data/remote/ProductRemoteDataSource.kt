@@ -109,9 +109,9 @@ class ProductRemoteDataSourceImpl @Inject constructor(private val postgrest: Pos
                             // Note: This is a workaround since 'in' operator might not be available
                             // For better performance, consider using a database view or RPC
                             // function
-                            productIdsForCategory.firstOrNull()?.let { firstId ->
-                                eq("id", firstId)
-                            }
+
+                            isIn("id", productIdsForCategory)
+
                             // For multiple IDs, you might need to use a different approach
                             // or make multiple queries and combine results
                         }
@@ -215,7 +215,7 @@ class ProductRemoteDataSourceImpl @Inject constructor(private val postgrest: Pos
     override suspend fun fetchProductById(id: Int): ProductDto? {
         val res = postgrest
             .from("products")
-            .select(columns = Columns.list("id","name","price","store_id","seller_id","rate","status","description","sold")) {
+            .select(columns = Columns.list("id","name","price","store_id","seller_id","rate","status","description","sold", "thumbnail")) {
                 filter { eq("id", id) }
                 limit(1)
             }
@@ -231,7 +231,7 @@ class ProductRemoteDataSourceImpl @Inject constructor(private val postgrest: Pos
                 filter {
                     eq("owner_id", productId)
                     eq("status", true)
-                    eq("type", "1")
+                    eq("type", "2")
                 }
             }
         return res.decodeList<MediaDto>()
