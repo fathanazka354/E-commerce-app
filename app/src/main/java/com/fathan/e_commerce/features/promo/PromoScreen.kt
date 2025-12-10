@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
-import com.fathan.e_commerce.data.models.PromoProduct
+import com.fathan.e_commerce.features.product.data.model.PromoProduct
 import com.fathan.e_commerce.features.components.BottomTab
 import com.fathan.e_commerce.features.components.ECommerceTopBar
 import com.fathan.e_commerce.features.components.BottomNavigationBar

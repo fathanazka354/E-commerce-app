@@ -10,8 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -26,12 +24,11 @@ import com.fathan.e_commerce.features.login.LoginScreen
 import com.fathan.e_commerce.features.product.ui.ProductDetailScreen
 import com.fathan.e_commerce.features.profile.ProfileScreen
 import com.fathan.e_commerce.features.Screen
-import com.fathan.e_commerce.features.chat.ChatDetailScreen
-import com.fathan.e_commerce.features.chat.ChatScreen
+import com.fathan.e_commerce.features.chat.ui.ChatDetailScreen
+import com.fathan.e_commerce.features.chat.ui.ChatScreen
 import com.fathan.e_commerce.features.forgot_password.ForgotPasswordScreen
 import com.fathan.e_commerce.features.home.HomeViewModel
 import com.fathan.e_commerce.features.login.LoginViewModel
-import com.fathan.e_commerce.features.product.ui.ProductDetailUiState
 import com.fathan.e_commerce.features.product.ui.ProductDetailViewModel
 import com.fathan.e_commerce.features.profile.ProfileViewModel
 import com.fathan.e_commerce.features.promo.PromoFlashSaleScreen
@@ -243,16 +240,30 @@ private fun AppNavHost(
             ChatScreen(
                 onBack = { navController.popBackStack() },
                 onHomeClick = {
-                    navController.safeNavigate(Screen.Home.route) { popUpTo(Screen.Home.route) { inclusive = false } }
+                    navController.safeNavigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = false }
+                    }
                 },
                 onProfileClick = { navController.navigate(Screen.Profile.route) },
-                onChatClick = { navController.navigate(Screen.ChatDetail.route) },
-                onTransactionClick = { navController.navigate(Screen.Transaction.route) }
+                onChatClick = { navController.navigate(Screen.Chat.route) },
+                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
+                onChatOpen = { roomId, authId ->
+                    // navigate to detail and pass room id
+                    navController.safeNavigate(Screen.ChatDetailWithUser.createRoute(roomId, authId))
+                }
             )
         }
 
-        composable(Screen.ChatDetail.route) {
-            ChatDetailScreen(onBack = { navController.popBackStack() })
+        composable(
+            route = Screen.ChatDetailWithUser.route,
+            arguments = listOf(
+                navArgument("roomId") { type = NavType.StringType },
+                navArgument("myAuthId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val roomId = backStackEntry.arguments?.getString("roomId") ?: return@composable
+            val myAuthId = backStackEntry.arguments?.getString("myAuthId") ?: return@composable
+            ChatDetailScreen(roomId = roomId, myAuthId = myAuthId, onBack = { navController.popBackStack() })
         }
 
         composable(Screen.Transaction.route) {

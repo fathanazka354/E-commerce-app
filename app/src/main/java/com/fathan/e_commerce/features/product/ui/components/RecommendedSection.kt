@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.fathan.e_commerce.data.models.RecommendedDto
+import com.fathan.e_commerce.features.product.data.model.RecommendedDto
 
 @Composable
 fun RecommendedSection(

@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.fathan.e_commerce.domain.entities.product.ProductVariant
+import com.fathan.e_commerce.features.product.domain.entities.ProductVariant
 
 @Composable
 fun VariantSelector(

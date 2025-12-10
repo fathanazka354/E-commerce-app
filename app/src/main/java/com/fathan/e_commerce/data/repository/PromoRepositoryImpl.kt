@@ -1,7 +1,7 @@
 package com.fathan.e_commerce.data.repository
 
-import com.fathan.e_commerce.data.models.PromoProduct
-import com.fathan.e_commerce.data.models.PromoVoucher
+import com.fathan.e_commerce.features.product.data.model.PromoProduct
+import com.fathan.e_commerce.features.product.data.model.PromoVoucher
 import com.fathan.e_commerce.domain.repository.PromoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

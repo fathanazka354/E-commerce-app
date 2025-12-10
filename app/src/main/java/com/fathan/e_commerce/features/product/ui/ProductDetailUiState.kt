@@ -1,9 +1,9 @@
 package com.fathan.e_commerce.features.product.ui
 
-import com.fathan.e_commerce.domain.entities.product.FlashSaleItem
-import com.fathan.e_commerce.domain.entities.product.Product
-import com.fathan.e_commerce.domain.entities.product.ProductVariant
-import com.fathan.e_commerce.data.models.RecommendedDto
+import com.fathan.e_commerce.features.product.domain.entities.FlashSaleItem
+import com.fathan.e_commerce.features.product.domain.entities.Product
+import com.fathan.e_commerce.features.product.domain.entities.ProductVariant
+import com.fathan.e_commerce.features.product.data.model.RecommendedDto
 
 data class ProductDetailUiState(
     val loading: Boolean = false,

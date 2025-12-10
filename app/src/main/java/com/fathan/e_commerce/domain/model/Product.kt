@@ -1,6 +1,6 @@
 package com.fathan.e_commerce.domain.model
 
-import com.fathan.e_commerce.domain.entities.product.Product
+import com.fathan.e_commerce.features.product.domain.entities.Product
 
 //
 //data class Product(

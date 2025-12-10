@@ -1,9 +1,7 @@
 package com.fathan.e_commerce.di
 
-import com.fathan.e_commerce.data.remote.ProductRemoteDataSource
-import com.fathan.e_commerce.data.remote.ProductRemoteDataSourceImpl
-import com.fathan.e_commerce.data.repository.ProductRepositoryImpl
-import com.fathan.e_commerce.domain.repository.ProductRepository
+import com.fathan.e_commerce.features.product.data.source.ProductRemoteDataSource
+import com.fathan.e_commerce.features.product.data.source.ProductRemoteDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

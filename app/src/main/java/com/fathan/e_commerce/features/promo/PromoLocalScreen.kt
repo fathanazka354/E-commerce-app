@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.fathan.e_commerce.data.models.PromoVoucher
+import com.fathan.e_commerce.features.product.data.model.PromoVoucher
 import com.fathan.e_commerce.features.promo.components.PromoProductCard
 
 @OptIn(ExperimentalMaterial3Api::class)

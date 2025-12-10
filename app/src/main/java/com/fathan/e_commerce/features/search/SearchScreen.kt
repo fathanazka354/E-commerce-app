@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import com.fathan.e_commerce.domain.entities.product.Product
+import com.fathan.e_commerce.features.product.domain.entities.Product
 import com.fathan.e_commerce.features.theme.BluePrimary
 import com.fathan.e_commerce.features.theme.BlueSoftBackground
 import com.fathan.e_commerce.features.theme.CardWhite

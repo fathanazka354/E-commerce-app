@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -20,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -28,9 +26,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.fathan.e_commerce.domain.entities.product.Category
-import com.fathan.e_commerce.domain.entities.product.FlashSaleItem
-import com.fathan.e_commerce.domain.entities.product.Product
+import com.fathan.e_commerce.features.product.domain.entities.Category
+import com.fathan.e_commerce.features.product.domain.entities.FlashSaleItem
+import com.fathan.e_commerce.features.product.domain.entities.Product
 import com.fathan.e_commerce.features.components.BottomNavigationBar
 import com.fathan.e_commerce.features.components.BottomTab
 import com.fathan.e_commerce.features.home.ui.components.ShimmerProductGridRows

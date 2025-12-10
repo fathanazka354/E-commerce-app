@@ -2,8 +2,8 @@ package com.fathan.e_commerce.features.promo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.fathan.e_commerce.data.models.PromoProduct
-import com.fathan.e_commerce.data.models.PromoVoucher
+import com.fathan.e_commerce.features.product.data.model.PromoProduct
+import com.fathan.e_commerce.features.product.data.model.PromoVoucher
 import com.fathan.e_commerce.domain.repository.PromoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

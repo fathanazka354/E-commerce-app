@@ -2,8 +2,8 @@ package com.fathan.e_commerce.features.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.fathan.e_commerce.domain.entities.product.Product
-import com.fathan.e_commerce.domain.usecase.products.SearchProductsUseCase
+import com.fathan.e_commerce.features.product.domain.entities.Product
+import com.fathan.e_commerce.features.product.domain.usecase.SearchProductsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fathan.e_commerce.data.models.PromoProduct
+import com.fathan.e_commerce.features.product.data.model.PromoProduct
 import com.fathan.e_commerce.features.promo.MelokalBatikCard
 import com.fathan.e_commerce.features.promo.TokoGreen
 

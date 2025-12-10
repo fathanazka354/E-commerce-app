@@ -1,13 +1,13 @@
 package com.fathan.e_commerce.data.utils
 
-import com.fathan.e_commerce.domain.entities.product.FlashSaleItem
+import com.fathan.e_commerce.features.product.domain.entities.FlashSaleItem
 
 
-import com.fathan.e_commerce.data.models.CategoryDto
-import com.fathan.e_commerce.data.models.FlashSaleDto
-import com.fathan.e_commerce.data.models.ProductDto
-import com.fathan.e_commerce.domain.entities.product.Category
-import com.fathan.e_commerce.domain.entities.product.Product
+import com.fathan.e_commerce.features.product.data.model.CategoryDto
+import com.fathan.e_commerce.features.product.data.model.FlashSaleDto
+import com.fathan.e_commerce.features.product.data.model.ProductDto
+import com.fathan.e_commerce.features.product.domain.entities.Category
+import com.fathan.e_commerce.features.product.domain.entities.Product
 
 fun CategoryDto.toDomain(): Category =
     Category(id = id, name = name ?: "Unknown", iconEmoji = icon ?: "📦")

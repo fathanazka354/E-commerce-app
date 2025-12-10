@@ -33,7 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.fathan.e_commerce.data.models.PromoProduct
+import com.fathan.e_commerce.features.product.data.model.PromoProduct
 import com.fathan.e_commerce.features.promo.TokoRed
 import com.fathan.e_commerce.features.wishlist.formatRupiah
 

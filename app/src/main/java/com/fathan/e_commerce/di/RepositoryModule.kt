@@ -1,37 +1,39 @@
 package com.fathan.e_commerce.di
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import com.fathan.e_commerce.data.local.FavoriteDao
 import com.fathan.e_commerce.data.local.WishlistDao
-import com.fathan.e_commerce.data.remote.ProductRemoteDataSource
+import com.fathan.e_commerce.features.product.data.source.ProductRemoteDataSource
 import com.fathan.e_commerce.data.remote.SupabaseUserRemoteDataSource
 import com.fathan.e_commerce.data.repository.AuthRepositoryImpl
-import com.fathan.e_commerce.data.repository.ChatRepositoryImpl
 import com.fathan.e_commerce.data.repository.FavoriteRepositoryImpl
-import com.fathan.e_commerce.data.repository.ProductRepositoryImpl
+import com.fathan.e_commerce.features.product.data.repository.ProductRepositoryImpl
 import com.fathan.e_commerce.data.repository.PromoRepositoryImpl
 import com.fathan.e_commerce.data.repository.WishlistRepositoryImpl
 import com.fathan.e_commerce.domain.repository.AuthRepository
-import com.fathan.e_commerce.domain.repository.ChatRepository
 import com.fathan.e_commerce.domain.repository.FavoriteRepository
-import com.fathan.e_commerce.domain.repository.ProductRepository
+import com.fathan.e_commerce.features.product.domain.repository.ProductRepository
 import com.fathan.e_commerce.domain.repository.PromoRepository
 import com.fathan.e_commerce.domain.repository.WishlistRepository
 import com.fathan.e_commerce.domain.usecase.auth.LogoutUseCase
-import com.fathan.e_commerce.domain.usecase.chats.GetMessagesUseCase
-import com.fathan.e_commerce.domain.usecase.chats.SendAudioMessageUseCase
-import com.fathan.e_commerce.domain.usecase.chats.SendImageMessageUseCase
-import com.fathan.e_commerce.domain.usecase.chats.SendTextMessageUseCase
-import com.fathan.e_commerce.domain.usecase.products.GetCategoriesUseCase
-import com.fathan.e_commerce.domain.usecase.products.GetFavoritesUseCase
-import com.fathan.e_commerce.domain.usecase.products.GetFlashSaleUseCase
-import com.fathan.e_commerce.domain.usecase.products.GetProductDetailUseCase
-import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCase
-import com.fathan.e_commerce.domain.usecase.products.GetProductsUseCaseV2
-import com.fathan.e_commerce.domain.usecase.products.IsFavoriteUseCase
-import com.fathan.e_commerce.domain.usecase.products.SearchProductsUseCase
-import com.fathan.e_commerce.domain.usecase.products.ToggleFavoriteUseCase
+import com.fathan.e_commerce.features.chat.domain.usecase.ChatUseCases
+import com.fathan.e_commerce.features.chat.domain.usecase.DeleteChat
+import com.fathan.e_commerce.features.chat.domain.usecase.FetchAllChats
+import com.fathan.e_commerce.features.chat.domain.usecase.FetchChatByRoom
+import com.fathan.e_commerce.features.chat.domain.usecase.FindChat
+import com.fathan.e_commerce.features.chat.domain.usecase.MarkAllAsRead
+import com.fathan.e_commerce.features.chat.domain.usecase.ReadByRoom
+import com.fathan.e_commerce.features.chat.domain.usecase.SendAudio
+import com.fathan.e_commerce.features.chat.domain.usecase.SendImage
+import com.fathan.e_commerce.features.chat.domain.usecase.SendText
+import com.fathan.e_commerce.features.product.domain.usecase.GetCategoriesUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.GetFavoritesUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.GetFlashSaleUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.GetProductDetailUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.GetProductsUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.GetProductsUseCaseV2
+import com.fathan.e_commerce.features.product.domain.usecase.IsFavoriteUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.SearchProductsUseCase
+import com.fathan.e_commerce.features.product.domain.usecase.ToggleFavoriteUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,12 +51,12 @@ object RepositoryModule {
         dao: FavoriteDao
     ): FavoriteRepository = FavoriteRepositoryImpl(dao)
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    @Provides
-    @Singleton
-    fun provideMessageRepository(
-        dao: FavoriteDao
-    ): ChatRepository = ChatRepositoryImpl()
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    @Provides
+//    @Singleton
+//    fun provideMessageRepository(
+//        dao: FavoriteDao
+//    ): ChatRepository = ChatRepositoryImpl()
 
     @Provides
     @Singleton
@@ -74,31 +76,31 @@ object RepositoryModule {
         repo: FavoriteRepository
     ): GetFavoritesUseCase = GetFavoritesUseCase(repo)
 
+//
+//    @Provides
+//    @Singleton
+//    fun provideGetChatsUseCase(
+//        repo: ChatRepository
+//    ): GetMessagesUseCase = GetMessagesUseCase(repo)
+//
 
-    @Provides
-    @Singleton
-    fun provideGetChatsUseCase(
-        repo: ChatRepository
-    ): GetMessagesUseCase = GetMessagesUseCase(repo)
-
-
-    @Provides
-    @Singleton
-    fun provideSendChatUseCase(
-        repo: ChatRepository
-    ): SendTextMessageUseCase = SendTextMessageUseCase(repo)
-
-    @Provides
-    @Singleton
-    fun provideSendImageChatUseCase(
-        repo: ChatRepository
-    ): SendImageMessageUseCase = SendImageMessageUseCase(repo)
-
-    @Provides
-    @Singleton
-    fun provideSendAudioChatUseCase(
-        repo: ChatRepository
-    ): SendAudioMessageUseCase = SendAudioMessageUseCase(repo)
+//    @Provides
+//    @Singleton
+//    fun provideSendChatUseCase(
+//        repo: ChatRepository
+//    ): SendTextMessageUseCase = SendTextMessageUseCase(repo)
+//
+//    @Provides
+//    @Singleton
+//    fun provideSendImageChatUseCase(
+//        repo: ChatRepository
+//    ): SendImageMessageUseCase = SendImageMessageUseCase(repo)
+//
+//    @Provides
+//    @Singleton
+//    fun provideSendAudioChatUseCase(
+//        repo: ChatRepository
+//    ): SendAudioMessageUseCase = SendAudioMessageUseCase(repo)
 
     @Provides
     @Singleton
@@ -152,6 +154,24 @@ object RepositoryModule {
     @Provides    @Singleton
     fun provideWishlistRepository(wishlistDao: WishlistDao): WishlistRepository {
         return WishlistRepositoryImpl(wishlistDao)
+    }
+
+
+    @Provides
+    @Singleton
+    fun provideUseCases(repo: com.fathan.e_commerce.features.chat.domain.repository.ChatRepository): ChatUseCases {
+        return ChatUseCases(
+            fetchAllChats = FetchAllChats(repo),
+            fetchChatByRoom = FetchChatByRoom(repo),
+            readByRoom = ReadByRoom(repo),
+            markAllAsRead = MarkAllAsRead(repo),
+            deleteChat = DeleteChat(repo),
+            findChat = FindChat(repo),
+            sendText = SendText(repo),
+            sendImage = SendImage(repo),
+            sendAudio = SendAudio(repo),
+            incomingMessages = repo.incomingMessages
+        )
     }
 
 
