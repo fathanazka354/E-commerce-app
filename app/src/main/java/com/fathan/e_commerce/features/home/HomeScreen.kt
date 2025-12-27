@@ -57,7 +57,6 @@ fun HomeScreen(
 
     Scaffold(
         containerColor = BackgroundGray,
-        modifier = Modifier.padding(WindowInsets.safeDrawing.asPaddingValues()),
         bottomBar = {
             BottomNavigationBar(
                 selectedTab = BottomTab.HOME,
@@ -72,8 +71,8 @@ fun HomeScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(padding)
                 .background(BackgroundGray),
-            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             // Top Bar with Search
             item {

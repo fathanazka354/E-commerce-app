@@ -18,8 +18,6 @@ import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -79,6 +77,7 @@ object SupabaseModule {
 
         return Retrofit.Builder()
             .baseUrl(SUPABASE_URL)
+//            .baseUrl("http://10.0.2.2:54321")
             .client(client)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()
@@ -90,6 +89,8 @@ object SupabaseModule {
         return retrofit.create(SupabaseChatApi::class.java)
     }
 
+
+
 //    @Provides
 //    @Singleton
 //    fun provideAppCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -98,19 +99,20 @@ object SupabaseModule {
     @Singleton
     fun provideSupabaseRemoteDataSource(
         api: SupabaseChatApi,
-        postgrest: Postgrest
+        postgrest: Postgrest,
+        supabaseClient: SupabaseClient
     ): SupabaseRemoteDataSource {
-        return SupabaseRemoteDataSource(api = api, supabaseUrl = SUPABASE_URL, anonKey = SUPABASE_ANON_KEY, postgrest = postgrest, userJwt = "")
+        return SupabaseRemoteDataSource(api = api, supabaseUrl = SUPABASE_URL, anonKey = SUPABASE_ANON_KEY, postgrest = postgrest, userJwt = "", supabaseClient = supabaseClient)
     }
 
     @Provides
     @Singleton
     fun provideChatRepository(
         remote: SupabaseRemoteDataSource,
-        scope: CoroutineScope
+        scope: CoroutineScope,
+        supabaseClient: SupabaseClient
     ): ChatRepository {
-        return ChatRepositoryImpl(remote = remote, scope = scope)
+        return ChatRepositoryImpl(remote = remote, scope = scope,  supabase =  supabaseClient)
     }
 
-    // NOTE: removed provideChatUseCases() to avoid duplicate binding
 }

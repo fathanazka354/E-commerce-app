@@ -2,12 +2,18 @@ package com.fathan.e_commerce
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+
+
+fun JsonObject.toMap(): Map<String, String> =
+    this.mapValues { it.value.jsonPrimitive.content }
 
 object Utils {
 

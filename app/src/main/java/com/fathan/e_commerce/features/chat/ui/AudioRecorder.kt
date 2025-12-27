@@ -2,89 +2,97 @@ package com.fathan.e_commerce.features.chat.ui
 
 import android.content.Context
 import android.media.MediaRecorder
-import android.net.Uri
+import android.os.Build
+import android.util.Log
 import java.io.File
+import java.io.IOException
 
-/**
- * Simple audio recorder wrapper to keep ChatDetailScreen clean.
- *
- * Usage:
- *  val recorder = AudioRecorder(context)
- *  recorder.startRecording()
- *  val (uri, durationMs) = recorder.stopRecording()
- */
 class AudioRecorder(private val context: Context) {
 
     private var recorder: MediaRecorder? = null
     private var outputFile: File? = null
-    private var startTime: Long = 0L
+    private var startTime: Long = 0
 
-    fun startRecording(): Boolean {
-        return try {
-            stopAndReleaseInternal()
+    fun startRecording(): File? {
+        try {
+            outputFile = File.createTempFile("audio_", ".m4a", context.cacheDir)
 
-            val fileName = "voice_${System.currentTimeMillis()}.m4a"
-            outputFile = File(context.cacheDir, fileName)
-
-            recorder = MediaRecorder().apply {
+            recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                MediaRecorder(context)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaRecorder()
+            }.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setOutputFile(outputFile!!.absolutePath)
+                setAudioEncodingBitRate(128000)
+                setAudioSamplingRate(44100)
+                setOutputFile(outputFile?.absolutePath)
+
                 prepare()
                 start()
             }
 
             startTime = System.currentTimeMillis()
-            true
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
+            Log.d("AudioRecorder", "Recording started: ${outputFile?.absolutePath}")
+            return outputFile
+
+        } catch (e: IOException) {
+            Log.e("AudioRecorder", "Recording failed", e)
+            cleanup()
+            return null
         }
     }
 
-    /**
-     * Stops recording and returns Uri + duration in millis.
-     */
-    fun stopRecording(): Pair<Uri, Long>? {
+    fun stopRecording(): Pair<File?, Long>? {
         return try {
             recorder?.apply {
                 stop()
+                release()
             }
+            recorder = null
+
             val duration = System.currentTimeMillis() - startTime
             val file = outputFile
 
-            stopAndReleaseInternal()
+            Log.d("AudioRecorder", "Recording stopped. Duration: ${duration}ms")
 
-            if (file != null && file.exists()) {
-                Pair(Uri.fromFile(file), duration)
+            if (file?.exists() == true && file.length() > 0) {
+                Pair(file, duration)
             } else {
+                cleanup()
                 null
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            stopAndReleaseInternal()
+            Log.e("AudioRecorder", "Stop recording failed", e)
+            cleanup()
             null
         }
     }
 
-    private fun stopAndReleaseInternal() {
+    fun cancelRecording() {
         try {
-            recorder?.release()
-        } catch (_: Exception) {
+            recorder?.apply {
+                stop()
+                release()
+            }
+        } catch (e: Exception) {
+            Log.e("AudioRecorder", "Cancel recording failed", e)
         } finally {
-            recorder = null
+            cleanup()
         }
     }
-}
 
-/**
- * Format duration millis -> m:ss (e.g. 0:05, 1:23)
- */
-fun formatDuration(millis: Long): String {
-    val totalSeconds = (millis / 1000).toInt().coerceAtLeast(0)
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "%d:%02d".format(minutes, seconds)
-}
+    private fun cleanup() {
+        recorder = null
+        outputFile?.delete()
+        outputFile = null
+    }
 
+    fun getDuration(): Long {
+        return if (startTime > 0) {
+            System.currentTimeMillis() - startTime
+        } else 0
+    }
+}

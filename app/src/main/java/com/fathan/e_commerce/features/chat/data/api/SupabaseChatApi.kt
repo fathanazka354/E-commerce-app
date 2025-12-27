@@ -4,6 +4,7 @@ import com.fathan.e_commerce.features.chat.data.model.request.InsertMessageReque
 import com.fathan.e_commerce.features.chat.data.model.response.MessageResponse
 import com.fathan.e_commerce.features.chat.data.model.request.SignedUrlRequest
 import com.fathan.e_commerce.features.chat.data.model.response.SignedUrlResponse
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -84,23 +85,34 @@ interface SupabaseChatApi {
     ): Response<List<MessageResponse>>
 
     // Storage upload (PUT)
-    @PUT("/storage/v1/object/{bucket}/{path}")
+    /**
+     * Upload file ke Supabase Storage
+     * Full path: /storage/v1/object/{bucket}/{path}
+     */
+    /**
+     * Upload file ke Supabase Storage
+     * Full path: /storage/v1/object/{bucket}/{path}
+     */
+    @POST("/storage/v1/object/{bucket}/{path}")
     suspend fun uploadFile(
         @Header("apikey") apiKey: String,
-        @Header("Authorization") authorization: String?,
+        @Header("Authorization") auth: String?,
         @Header("Content-Type") contentType: String,
         @Path("bucket") bucket: String,
-        @Path(value = "path", encoded = true) path: String,
-        @Body fileBytes: ByteArray
+        @Path(value = "path", encoded = true) path: String,  // ✅ encoded = true
+        @Body body: RequestBody
     ): Response<Unit>
 
-    // Create signed url (optional)
+    /**
+     * Create signed URL untuk file
+     * Full path: /storage/v1/object/sign/{bucket}/{path}
+     */
     @POST("/storage/v1/object/sign/{bucket}/{path}")
     suspend fun createSignedUrl(
         @Header("apikey") apiKey: String,
-        @Header("Authorization") authorization: String?,
+        @Header("Authorization") auth: String?,
         @Path("bucket") bucket: String,
-        @Path("path") path: String,
-        @Body body: SignedUrlRequest
+        @Path(value = "path", encoded = true) path: String,  // ✅ encoded = true
+        @Body request: SignedUrlRequest
     ): Response<SignedUrlResponse>
 }

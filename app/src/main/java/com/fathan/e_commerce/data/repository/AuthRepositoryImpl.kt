@@ -4,6 +4,7 @@ import android.util.Log
 import com.fathan.e_commerce.data.models.SupabaseUser
 import com.fathan.e_commerce.data.models.auth.SignUpResult
 import com.fathan.e_commerce.data.remote.SupabaseUserRemoteDataSource
+import com.fathan.e_commerce.domain.entities.auth.AccountType
 import com.fathan.e_commerce.domain.entities.auth.SignUpParams
 import com.fathan.e_commerce.domain.model.AuthUser
 import com.fathan.e_commerce.domain.repository.AuthRepository
@@ -24,176 +25,87 @@ class AuthRepositoryImpl @Inject constructor(
     private val postgrest: Postgrest
 ) : AuthRepository {
 
-    override suspend fun login(email: String, password: String): AuthResult<AuthUser> {
+    override suspend fun login(
+        email: String,
+        password: String
+    ): AuthResult<AuthUser> {
         return try {
-            Log.d("AuthRepositoryIMPL", "login: Starting login for $email")
-
-            // 1) Login to Supabase Auth with EMAIL + PASSWORD
-            // ❌ WRONG: supabaseAuth.signInWith(Email) - this sends magic link
-            // ✅ CORRECT: Use signInWith(Email) with password
+            Log.d("AuthRepositoryImpl", "wokowk: ${email} | $password")
             supabaseAuth.signInWith(Email) {
                 this.email = email.trim()
-                this.password = password  // ← THIS WAS MISSING!
+                this.password = password
             }
+            Log.d("AuthRepositoryImpl", "wokowk: 2")
 
-            Log.d("AuthRepositoryIMPL", "login: Auth successful")
 
-            // 2) Get session after login
             val session = supabaseAuth.currentSessionOrNull()
-            val user = session?.user
+                ?: return AuthResult.Error("Session not found")
+            Log.d("AuthRepositoryImpl", "login: ${session}")
 
-            Log.d("AuthRepositoryIMPL", "login: Got session")
+            val user = session.user
 
-            if (user != null) {
-                Log.d("AuthRepositoryIMPL", "login: User found in auth")
-
-                // 3) Verify user exists in "users" table
-                val hashedInput = hashPassword(password)
-
-                val existingUser = postgrest.from("users")
-                    .select(columns = Columns.ALL) {
-                        filter {
-                            eq("email", email.trim())
-                            eq("password", hashedInput)
-                        }
-                    }
-                    .decodeSingleOrNull<SupabaseUser>()
-
-                Log.d("AuthRepositoryIMPL", "login: Checked users table")
-
-                if (existingUser == null) {
-                    Log.e("AuthRepositoryIMPL", "login: User not found in users table")
-                    return AuthResult.Error("Login Failed: User not found")
-                }
-
-                Log.d("AuthRepositoryIMPL", "login: Login successful")
-
-                AuthResult.Success(
-                    AuthUser(
-                        uid = user.id,
-                        email = user.email ?: "",
-                    )
+            AuthResult.Success(
+                AuthUser(
+                    uid = user?.id?:"",
+                    email = user?.email.orEmpty()
                 )
-            } else {
-                Log.e("AuthRepositoryIMPL", "login: No user in session")
-                AuthResult.Error("Login Failed: User not found")
-            }
+            )
         } catch (e: Exception) {
-            e.printStackTrace()
-            val msg = e.message.orEmpty()
-            Log.e("AuthRepositoryIMPL", "login: Exception - $msg")
-
-            val errorMessage = when {
-                msg.contains("Invalid login credentials", ignoreCase = true) ->
-                    "Email atau password salah"
-                msg.contains("Email not confirmed", ignoreCase = true) ->
-                    "Email belum dikonfirmasi"
-                msg.contains("User not found", ignoreCase = true) ->
-                    "User tidak ditemukan"
-                msg.contains("Network", ignoreCase = true) ->
-                    "Koneksi internet bermasalah"
-                else -> msg.ifBlank { "Login gagal. Silakan coba lagi." }
-            }
-            AuthResult.Error(errorMessage)
+            Log.d("AuthRepositoryImpl", "error: ${e.message}")
+            AuthResult.Error(
+                when {
+                    e.message?.contains("Invalid login credentials", true) == true ->
+                        "Email atau password salah"
+                    e.message?.contains("Email not confirmed", true) == true ->
+                        "Email belum dikonfirmasi"
+                    else -> e.message ?: "Login gagal"
+                }
+            )
         }
     }
 
 
     override suspend fun signUp(params: SignUpParams): SignUpResult {
         return try {
-            val authResponse = supabaseAuth.signUpWith(Email){
+            // 1️⃣ Sign up ke Supabase Auth
+            val authResult = supabaseAuth.signUpWith(Email) {
                 email = params.email
                 password = params.password
+            } ?: return SignUpResult.Error("Signup failed")
+
+            val roleId = when (params.accountType) {
+                AccountType.SELLER -> 2L
+                AccountType.BUYER -> 3L
             }
 
-            if (authResponse == null) return SignUpResult.Error("Sign Up Failed")
-
-            val hashedPassword = hashPassword(params.password)
+            // 2️⃣ Insert profile ke users table
             val userId = remoteDataSource.createUserWithRelations(
                 name = params.name,
                 email = params.email,
-                hashedPassword = hashedPassword,
-                accountType = params.accountType
+                roleId = roleId,
+
             )
+
             SignUpResult.Success(userId)
-        } catch (e: Exception){
-            e.printStackTrace()
-            SignUpResult.Error(e.message ?: "Sign Up Failed")
+        } catch (e: Exception) {
+            SignUpResult.Error(e.message ?: "Signup error")
         }
     }
 
     override suspend fun resetPasswordWithToken(
-        accessToken: String, // This should be access_token from URL
+        accessToken: String,
         newPassword: String
     ): AuthResult<Boolean> {
         return try {
-            Log.d("ResetPassword", "Step 1: Getting user info from access token")
+            // Cukup update ke Supabase Auth
+            remoteDataSource.updatePasswordWithAccessToken(
+                accessToken,
+                newPassword
+            )
 
-            // STEP 1: Get user info using the access token from URL
-            val sessionResult = remoteDataSource.verifyRecoveryTokenFromURL(accessToken)
-            if (sessionResult.isFailure) {
-                return AuthResult.Error(
-                    sessionResult.exceptionOrNull()?.message ?: "Failed to verify token"
-                )
-            }
-
-            val sessionInfo = sessionResult.getOrNull()!!
-            val email = sessionInfo.email
-
-            Log.d("ResetPassword", "Step 2: Token verified for email: $email")
-
-            if (email.isNullOrBlank()) {
-                return AuthResult.Error("Email not found in token")
-            }
-
-            // STEP 2: Update password in Supabase Auth using the access token
-            val authUpdate = remoteDataSource.updatePasswordWithAccessToken(accessToken, newPassword)
-            if (authUpdate.isFailure) {
-                return AuthResult.Error(
-                    authUpdate.exceptionOrNull()?.message ?: "Failed to update auth password"
-                )
-            }
-
-            Log.d("ResetPassword", "Step 3: Auth password updated")
-
-            // STEP 3: Hash password for local storage
-            val hashedPassword = hashPassword(newPassword)
-
-            // STEP 4: Check if user exists in users table
-            val existsResult = remoteDataSource.findUserByEmail(email)
-            if (existsResult.isFailure) {
-                return AuthResult.Error(
-                    "Failed checking user: ${existsResult.exceptionOrNull()?.message}"
-                )
-            }
-
-            val exists = existsResult.getOrNull() == true
-
-            Log.d("ResetPassword", "Step 4: User exists in table: $exists")
-
-            if (exists) {
-                // STEP 5: Update password in users table
-                val updateResult = remoteDataSource.updateUsersTablePassword(
-                    email = email,
-                    hashedPassword = hashedPassword
-                )
-
-                if (updateResult.isFailure) {
-                    return AuthResult.Error(
-                        updateResult.exceptionOrNull()?.message ?: "Failed to update users table"
-                    )
-                }
-
-                Log.d("ResetPassword", "Step 5: Users table updated")
-            }
-
-            Log.d("ResetPassword", "Password reset completed successfully!")
             AuthResult.Success(true)
-
         } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("ResetPassword", "Error: ${e.message}")
-            AuthResult.Error(e.message ?: "Password reset failed")
+            AuthResult.Error(e.message ?: "Reset password gagal")
         }
     }
 

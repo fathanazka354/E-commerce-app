@@ -23,6 +23,7 @@ open class UserPreferences @Inject constructor(
         val KEY_LOGGED_IN = booleanPreferencesKey("logged_in")
         val KEY_USERNAME = stringPreferencesKey("username")
         val KEY_EMAIL = stringPreferencesKey("email")
+        val KEY_ID = stringPreferencesKey("id")
     }
 
     // Expose cold Flows only – ViewModel will convert to StateFlow if needed
@@ -35,17 +36,24 @@ open class UserPreferences @Inject constructor(
     open val userEmailFlow: Flow<String> =
         context.userDataStore.data.map { prefs -> prefs[KEY_EMAIL] ?: "" }
 
-    open suspend fun saveUser(name: String, email: String) {
+    open val userIdFlow: Flow<String> =
+        context.userDataStore.data.map { prefs -> prefs[KEY_ID] ?: "" }
+
+    open suspend fun saveUser(name: String, email: String, idUser: String) {
         context.userDataStore.edit {
             it[KEY_LOGGED_IN] = true
             it[KEY_USERNAME] = name
             it[KEY_EMAIL] = email
+            it[KEY_ID] = idUser
         }
     }
 
-    open suspend fun setIsLoggedIn(isLoggedIn: Boolean){
+    open suspend fun setIsLoggedIn(isLoggedIn: Boolean,name: String, email: String, idUser: String){
         context.userDataStore.edit {
             it[KEY_LOGGED_IN] = isLoggedIn
+            it[KEY_USERNAME] = name
+            it[KEY_EMAIL] = email
+            it[KEY_ID] = email
         }
     }
 

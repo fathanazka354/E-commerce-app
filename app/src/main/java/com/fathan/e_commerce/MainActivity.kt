@@ -249,22 +249,30 @@ private fun AppNavHost(
                 onTransactionClick = { navController.navigate(Screen.Transaction.route) },
                 onChatOpen = { roomId, authId ->
                     // navigate to detail and pass room id
-                    navController.safeNavigate(Screen.ChatDetailWithUser.createRoute(roomId, authId))
+                    navController.safeNavigate(Screen.ChatDetailWithUser.createRoute(roomId, authId)){
+                        navController.navigate(Screen.Chat.route)
+                    }
                 }
             )
         }
 
-        composable(
-            route = Screen.ChatDetailWithUser.route,
-            arguments = listOf(
-                navArgument("roomId") { type = NavType.StringType },
-                navArgument("myAuthId") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val roomId = backStackEntry.arguments?.getString("roomId") ?: return@composable
-            val myAuthId = backStackEntry.arguments?.getString("myAuthId") ?: return@composable
-            ChatDetailScreen(roomId = roomId, myAuthId = myAuthId, onBack = { navController.popBackStack() })
+//        composable(
+//            route = Screen.ChatDetailWithUser.route,
+//            arguments = listOf(
+//                navArgument("roomId") { type = NavType.StringType },
+//                navArgument("myAuthId") { type = NavType.StringType }
+//            )
+//        ) { backStackEntry ->
+//            val roomId = backStackEntry.arguments?.getString("roomId") ?: return@composable
+//            val myAuthId = backStackEntry.arguments?.getString("myAuthId") ?: return@composable
+//            ChatDetailScreen(roomId = roomId, myAuthId = myAuthId, onBack = { navController.popBackStack() })
+//        }
+        composable("chat_detail/{roomId}/{authId}") { backStack ->
+            val roomId = backStack.arguments?.getString("roomId") ?: ""
+            val authId = backStack.arguments?.getString("authId") ?: ""
+            ChatDetailScreen(roomId = roomId, myUserId = authId, onBack = { navController.popBackStack() })
         }
+
 
         composable(Screen.Transaction.route) {
             TransactionScreen(

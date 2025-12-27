@@ -46,9 +46,9 @@ fun BottomNavigationBar(
     onPromoClick: () -> Unit = {}
 ) {
     Surface(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 0.dp), // Handle system navigation bar
+            .windowInsetsPadding(WindowInsets.navigationBars),
         color = Color.White,
         shadowElevation = 12.dp,
         tonalElevation = 0.dp

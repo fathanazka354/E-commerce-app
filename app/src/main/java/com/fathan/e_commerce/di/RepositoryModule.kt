@@ -16,9 +16,11 @@ import com.fathan.e_commerce.domain.repository.PromoRepository
 import com.fathan.e_commerce.domain.repository.WishlistRepository
 import com.fathan.e_commerce.domain.usecase.auth.LogoutUseCase
 import com.fathan.e_commerce.features.chat.domain.usecase.ChatUseCases
+import com.fathan.e_commerce.features.chat.domain.usecase.CreateRoomIfNotExists
 import com.fathan.e_commerce.features.chat.domain.usecase.DeleteChat
 import com.fathan.e_commerce.features.chat.domain.usecase.FetchAllChats
 import com.fathan.e_commerce.features.chat.domain.usecase.FetchChatByRoom
+import com.fathan.e_commerce.features.chat.domain.usecase.FetchChatByRoomWithStatus
 import com.fathan.e_commerce.features.chat.domain.usecase.FindChat
 import com.fathan.e_commerce.features.chat.domain.usecase.MarkAllAsRead
 import com.fathan.e_commerce.features.chat.domain.usecase.ReadByRoom
@@ -170,7 +172,9 @@ object RepositoryModule {
             sendText = SendText(repo),
             sendImage = SendImage(repo),
             sendAudio = SendAudio(repo),
-            incomingMessages = repo.incomingMessages
+            createRoomIfNotExists = CreateRoomIfNotExists(repo),
+            incomingMessages = repo.incomingMessages,
+            fetchChatByRoomWithStatus = FetchChatByRoomWithStatus(repo)
         )
     }
 

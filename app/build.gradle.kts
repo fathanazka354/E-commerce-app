@@ -36,22 +36,44 @@ android {
             }
         }
 
+        // Ambil dari local.properties
         val supabaseUrl = localProps.getProperty("SUPABASE_URL", "")
         val supabaseAnon = localProps.getProperty("SUPABASE_ANON_KEY", "")
         val deployedURL = localProps.getProperty("MY_DEPLOYED_URL", "")
 
-        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_URL_PROD", "\"$supabaseUrl\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnon\"")
         buildConfigField("String", "MY_DEPLOYED_URL", "\"$deployedURL\"")
     }
 
     buildTypes {
+        debug {
+            // ❌ HAPUS INI:
+            // buildConfigField("String", "SUPABASE_URL", "\"http://10.0.2.2:54321\"")
+
+            // ✅ GANTI JADI INI (pakai URL dari local.properties):
+            val localPropsFile = rootProject.file("local.properties")
+            val localProps = Properties().apply {
+                if (localPropsFile.exists()) {
+                    localPropsFile.inputStream().use { load(it) }
+                }
+            }
+            buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("SUPABASE_URL", "")}\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Tambahkan ini juga untuk release
+            val localPropsFile = rootProject.file("local.properties")
+            val localProps = Properties().apply {
+                if (localPropsFile.exists()) {
+                    localPropsFile.inputStream().use { load(it) }
+                }
+            }
+            buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("SUPABASE_URL", "")}\"")
         }
     }
 

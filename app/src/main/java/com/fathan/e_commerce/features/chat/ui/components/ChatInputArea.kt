@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,22 +24,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import android.view.View
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 
-/**
- * Chat input area used on ChatDetailScreen.
- *
- * Callbacks:
- *  - onSendText(text)
- *  - onAttachImage() -> launch image picker from caller
- *  - onStartRecording() -> start UI audio recorder (handled in UI)
- *  - onStopRecordingAndSend() -> stop recorder and send recorded file
- *
- * Notes:
- * - This composable intentionally does not perform the recording itself — keep audio recording infra in the screen / recorder class.
- */
 @Composable
 fun ChatInputArea(
     onSendText: (String) -> Unit,
@@ -50,96 +37,95 @@ fun ChatInputArea(
 ) {
     var text by remember { mutableStateOf("") }
     var isRecording by remember { mutableStateOf(false) }
-    val view: View = LocalView.current
-    val ctx = LocalContext.current
+    val view = LocalView.current
+    val context = LocalContext.current
 
-    Row(
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF9F9F9))
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.Bottom
+            .windowInsetsPadding(WindowInsets.safeDrawing) // ← Safe area global
+            .background(Color(0xFFF9F9F9)),
+        color = Color.Transparent,
+        shadowElevation = 2.dp
     ) {
-        Surface(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White,
-            tonalElevation = 2.dp
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                BasicTextField(
-                    value = if (isRecording) "Recording..." else text,
-                    onValueChange = { if (!isRecording) text = it },
-                    enabled = !isRecording,
-                    modifier = Modifier.weight(1f),
-                    textStyle = TextStyle(fontSize = 16.sp, color = if (isRecording) Color.Red else Color.Black),
-                    decorationBox = { inner ->
-                        if (text.isBlank() && !isRecording) {
-                            Text("Type here..", color = Color.LightGray, fontSize = 16.sp)
-                        }
-                        inner()
-                    }
-                )
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    BasicTextField(
+                        value = if (isRecording) "Recording..." else text,
+                        onValueChange = { if (!isRecording) text = it },
+                        modifier = Modifier.weight(1f),
+                        textStyle = TextStyle(fontSize = 16.sp, color = Color.Black)
+                    )
 
-                if (!isRecording) {
                     Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(onClick = onAttachImage, modifier = Modifier.size(24.dp)) {
+
+                    IconButton(onClick = onAttachImage) {
                         Icon(Icons.Default.Image, contentDescription = "Attach image")
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    IconButton(onClick = { /* camera not handled here */ }, modifier = Modifier.size(24.dp)) {
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(onClick = { /* camera TODO */ }) {
                         Icon(Icons.Default.CameraAlt, contentDescription = "Camera")
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        Surface(
-            shape = CircleShape,
-            color = if (isRecording) Color.Red else Color(0xFF5C6BC0),
-            tonalElevation = 4.dp,
-            modifier = Modifier.size(48.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
+            Surface(
+                shape = CircleShape,
+                color = if (isRecording) Color.Red else Color(0xFF5C6BC0),
+                modifier = Modifier.size(52.dp),
+                shadowElevation = 6.dp
+            ) {
+                Box(modifier = Modifier
                     .fillMaxSize()
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = {
                                 if (text.isNotBlank()) {
-                                    onSendText(text)
+                                    onSendText(text.trim())
                                     text = ""
                                     view.playSoundEffect(SoundEffectConstants.CLICK)
                                 } else {
-                                    Toast.makeText(ctx, "Hold to record voice message", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Hold to record voice message", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             onLongPress = {
                                 isRecording = true
-                                onStartRecording()
                                 view.playSoundEffect(SoundEffectConstants.CLICK)
+                                onStartRecording()
                             },
                             onPress = {
-                                try {
-                                    awaitRelease()
-                                    if (isRecording) {
-                                        isRecording = false
-                                        onStopRecordingAndSend()
-                                        view.playSoundEffect(SoundEffectConstants.CLICK)
-                                    }
-                                } catch (_: Exception) { /* ignore */ }
+                                tryAwaitRelease()
+                                if (isRecording) {
+                                    isRecording = false
+                                    onStopRecordingAndSend()
+                                    view.playSoundEffect(SoundEffectConstants.CLICK)
+                                }
                             }
                         )
-                    }
-            ) {
-                Icon(
-                    imageVector = if (text.isNotBlank()) Icons.AutoMirrored.Filled.Send else Icons.Default.Mic,
-                    contentDescription = "Action",
-                    tint = Color.White
-                )
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (text.isNotBlank()) Icons.AutoMirrored.Filled.Send else Icons.Default.Mic,
+                        contentDescription = "Action",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }

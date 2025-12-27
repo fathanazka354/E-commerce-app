@@ -18,9 +18,8 @@ interface UserRemoteDataSource {
     suspend fun createUserWithRelations(
         name: String,
         email: String,
-        hashedPassword: String,
-        accountType: AccountType
-    ): Long
+        roleId: Long
+    ): String
 
     suspend fun sendPasswordRecoveryEmail(email: String, redirectTo: String? = null): Result<Unit>
 
@@ -41,19 +40,12 @@ class SupabaseUserRemoteDataSource @Inject constructor(
     override suspend fun createUserWithRelations(
         name: String,
         email: String,
-        hashedPassword: String,
-        accountType: AccountType
-    ): Long {
-        val roleId = when (accountType) {
-            AccountType.SELLER -> 2L
-            AccountType.BUYER -> 3L
-        }
-
-        val params = CreateUserWithRelationsParams(
-            name = name,
-            email = email,
-            password = hashedPassword,
-            roleId = roleId
+        roleId: Long
+    ): String {
+        val params = mapOf(
+            "p_name" to name,
+            "p_email" to email,
+            "p_role_id" to roleId
         )
 
         val result = postgrest.rpc(
@@ -118,23 +110,18 @@ class SupabaseUserRemoteDataSource @Inject constructor(
             Result.failure(t)
         }
     }
-
-    override suspend fun updatePasswordWithAccessToken(accessToken: String, newPassword: String): Result<Unit> {
-        return try {
-            Log.d(TAG, "updatePasswordWithAccessToken")
-            val body = UpdatePasswordRequest(password = newPassword)
-            val resp = api.updateUserPassword(apiKeyHeader, "Bearer $accessToken", body)
-
-            if (resp.isSuccessful) Result.success(Unit)
-            else {
-                val err = "Update password failed: ${resp.code()} ${resp.errorBody()?.string()}"
-                Log.e(TAG, err)
-                Result.failure(Exception(err))
-            }
-        } catch (t: Throwable) {
-            Log.e(TAG, "updatePasswordWithAccessToken error", t)
-            Result.failure(t)
-        }
+    override suspend fun updatePasswordWithAccessToken(
+        accessToken: String,
+        newPassword: String
+    ): Result<Unit> {
+        val body = UpdatePasswordRequest(password = newPassword)
+        val resp = api.updateUserPassword(
+            BuildConfig.SUPABASE_ANON_KEY,
+            "Bearer $accessToken",
+            body
+        )
+        return if (resp.isSuccessful) Result.success(Unit)
+        else Result.failure(Exception("Update password failed"))
     }
 
     override suspend fun findUserByEmail(email: String): Result<Boolean> {

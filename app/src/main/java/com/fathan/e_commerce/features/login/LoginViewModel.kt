@@ -1,5 +1,6 @@
 package com.fathan.e_commerce.features.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fathan.e_commerce.data.UserPreferences
@@ -52,7 +53,12 @@ class LoginViewModel  @Inject constructor(
 
             when (val result = loginUseCase(emailValue, passwordValue)) {
                 is AuthResult.Success -> {
-                    userPreferences.setIsLoggedIn(true)
+                    Log.d("LoginViewModel", "onLoginClickedUp: ${result.data.uid}")
+                    userPreferences.setIsLoggedIn(
+                        isLoggedIn = true,
+                        name = "",
+                        idUser = result.data.uid,
+                        email = emailValue)
                     _uiState.value = LoginUIState(isLoading = false)
                     onSuccess()
                 }
