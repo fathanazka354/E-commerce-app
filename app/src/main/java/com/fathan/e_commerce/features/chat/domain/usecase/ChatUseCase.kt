@@ -1,15 +1,14 @@
 package com.fathan.e_commerce.features.chat.domain.usecase
 
-import com.fathan.e_commerce.features.chat.data.model.response.MessageWithReadStatus
 import com.fathan.e_commerce.features.chat.domain.entity.ChatMessage
-import com.fathan.e_commerce.features.chat.domain.entity.Conversation
+import com.fathan.e_commerce.features.chat.domain.entity.ConversationItem
 import com.fathan.e_commerce.features.chat.domain.repository.ChatRepository
 
 
 import kotlinx.coroutines.flow.Flow
 
 class FetchAllChats(private val repo: ChatRepository) {
-    suspend operator fun invoke(): List<Conversation> = repo.fetchAllChats()
+    suspend operator fun invoke(): List<ConversationItem> = repo.fetchAllChats()
 }
 class FetchChatByRoom(private val repo: ChatRepository) {
     suspend operator fun invoke(roomId: String): List<ChatMessage> = repo.fetchChatByRoomId(roomId)

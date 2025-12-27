@@ -5,7 +5,8 @@ import com.fathan.e_commerce.data.remote.api.RetrofitProvider
 import com.fathan.e_commerce.data.remote.api.SupabaseApi
 import com.fathan.e_commerce.features.chat.data.api.SupabaseChatApi
 import com.fathan.e_commerce.features.chat.data.repository.ChatRepositoryImpl
-import com.fathan.e_commerce.features.chat.data.source.SupabaseRemoteDataSource
+import com.fathan.e_commerce.features.chat.data.source.ChatRemoteDataSource
+import com.fathan.e_commerce.features.chat.data.source.ChatRemoteDataSourceImpl
 import com.fathan.e_commerce.features.chat.domain.repository.ChatRepository
 import dagger.Module
 import dagger.Provides
@@ -89,30 +90,22 @@ object SupabaseModule {
         return retrofit.create(SupabaseChatApi::class.java)
     }
 
-
-
-//    @Provides
-//    @Singleton
-//    fun provideAppCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
     @Provides
     @Singleton
     fun provideSupabaseRemoteDataSource(
         api: SupabaseChatApi,
         postgrest: Postgrest,
         supabaseClient: SupabaseClient
-    ): SupabaseRemoteDataSource {
-        return SupabaseRemoteDataSource(api = api, supabaseUrl = SUPABASE_URL, anonKey = SUPABASE_ANON_KEY, postgrest = postgrest, userJwt = "", supabaseClient = supabaseClient)
+    ): ChatRemoteDataSource {
+        return ChatRemoteDataSourceImpl( supabaseClient = supabaseClient)
     }
 
     @Provides
     @Singleton
     fun provideChatRepository(
-        remote: SupabaseRemoteDataSource,
-        scope: CoroutineScope,
-        supabaseClient: SupabaseClient
+        remote: ChatRemoteDataSource,
     ): ChatRepository {
-        return ChatRepositoryImpl(remote = remote, scope = scope,  supabase =  supabaseClient)
+        return ChatRepositoryImpl(remote = remote, )
     }
 
 }

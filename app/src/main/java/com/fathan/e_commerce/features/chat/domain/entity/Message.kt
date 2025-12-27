@@ -2,6 +2,7 @@ package com.fathan.e_commerce.features.chat.domain.entity
 
 import android.net.Uri
 import androidx.compose.ui.graphics.Color
+import kotlinx.serialization.SerialName
 
 
 enum class MessageType {
@@ -18,32 +19,25 @@ enum class MessageType {
     }
 }
 
-data class ChatMessage(
+// Message.kt
+data class Message(
     val id: String,
-    val roomId: String,
+
+    val conversationId: String,
+
     val senderId: String,
-    val senderName: String? = null,
-    val otherUserName: String? = null,
-    val otherUserEmail: String? = null,
-    val otherUserAvatar: String? = null,
 
-    val message: String? = null,
-    val type: MessageType = MessageType.TEXT,
+    val messageType: String, // "text", "image", "product_card", "system"
 
-    val mediaUrl: String? = null,
-    val metadata: Map<String, String>? = null,
+    val messageContent: String,
 
-    val isRead: Boolean = false,
-    val isMe: Boolean = true,
+    val productId: Long?,
+
+    val isRead: Boolean,
+
+    val readAt: String?,
 
     val createdAt: String,
-    val time: String = "",
-    val date: String = "",
 
-    // UI helpers
-    val initial: String = "?",
-    val avatarColor: Color = Color(0xFFE1BEE7),
-    val imageUri: Uri? = null,
-    val audioUri: Uri? = null,
-    val audioDuration: String? = null
+    val updatedAt: String
 )

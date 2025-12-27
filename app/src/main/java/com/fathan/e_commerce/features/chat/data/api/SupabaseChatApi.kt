@@ -1,9 +1,5 @@
 package com.fathan.e_commerce.features.chat.data.api
 
-import com.fathan.e_commerce.features.chat.data.model.request.InsertMessageRequest
-import com.fathan.e_commerce.features.chat.data.model.response.MessageResponse
-import com.fathan.e_commerce.features.chat.data.model.request.SignedUrlRequest
-import com.fathan.e_commerce.features.chat.data.model.response.SignedUrlResponse
 import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body

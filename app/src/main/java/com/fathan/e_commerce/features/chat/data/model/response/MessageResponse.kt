@@ -1,32 +1,35 @@
 package com.fathan.e_commerce.features.chat.data.model.response
 
 import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
 
-@Serializable
+// Message.kt
 data class MessageResponse(
-    @SerialName("message_id")
-    val messageId: String? = null,
+    val id: String,
 
-    @SerialName("id")
-    val id: String? = null,
-    @SerialName("room_id")
-    val roomId: String,
+    @SerialName("conversation_id")
+    val conversationId: String,
+
     @SerialName("sender_id")
     val senderId: String,
-    val content: String? = null,
+
     @SerialName("message_type")
-    val messageType: String,
-    @SerialName("media_url")
-    val mediaUrl: String? = null,
-    val metadata: JsonElement? = null,
+    val messageType: String, // "text", "image", "product_card", "system"
+
+    @SerialName("message_content")
+    val messageContent: String,
+
+    @SerialName("product_id")
+    val productId: Long?,
+
+    @SerialName("is_read")
+    val isRead: Boolean,
+
+    @SerialName("read_at")
+    val readAt: String?,
+
     @SerialName("created_at")
     val createdAt: String,
-    @SerialName("product_id")
-    val productId: Int? = null,
-    @SerialName("is_read")
-    val isRead: Boolean = false,
-    @SerialName("other_user_name")
-    val otherUserName: String? = null,
+
+    @SerialName("updated_at")
+    val updatedAt: String
 )

@@ -8,7 +8,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fathan.e_commerce.features.chat.domain.entity.ChatMessage
-import com.fathan.e_commerce.features.chat.domain.entity.Conversation
+import com.fathan.e_commerce.features.chat.domain.entity.ConversationItem
 import com.fathan.e_commerce.features.chat.domain.entity.MessageType
 import com.fathan.e_commerce.features.chat.domain.usecase.ChatUseCases
 import com.fathan.e_commerce.features.chat.utils.ChatFilter
@@ -24,11 +24,11 @@ import java.util.UUID
 import javax.inject.Inject
 
 data class ChatUiState(
-    val conversations: List<Conversation> = emptyList(),
+    val conversations: List<ConversationItem> = emptyList(),
     val messages: List<ChatMessage> = emptyList(),
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val displayedMessages: List<Conversation> = emptyList(),
+    val displayedMessages: List<ConversationItem> = emptyList(),
     val activeFilter: ChatFilter = ChatFilter.ALL,
     val uploadingMedia: Map<String, Float> = emptyMap()
 )
@@ -306,7 +306,7 @@ class ChatViewModel @Inject constructor(
             try {
                 val results = useCases.findChat(query, null)
                 val mapped = results.map {
-                    Conversation(
+                    ConversationItem(
                         lastMessageTime = it.createdAt,
                         unreadCount = 0,
                         lastSenderId = it.senderId,

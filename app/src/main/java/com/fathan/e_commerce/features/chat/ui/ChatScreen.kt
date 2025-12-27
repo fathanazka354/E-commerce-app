@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.fathan.e_commerce.Utils
-import com.fathan.e_commerce.features.chat.domain.entity.Conversation
+import com.fathan.e_commerce.features.chat.domain.entity.ConversationItem
 import com.fathan.e_commerce.features.chat.domain.entity.MessageType
 import com.fathan.e_commerce.features.chat.utils.ChatFilter
 import com.fathan.e_commerce.features.components.BottomNavigationBar
@@ -150,7 +150,7 @@ fun ChatScreen(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ChatListItem(
-    chatMessage: Conversation,
+    chatMessage: ConversationItem,
     onClick: () -> Unit
 ) {
     Log.d("ChatListItem", "ChatListItem: ${chatMessage.lastMessage} || ${chatMessage.isRead} ")

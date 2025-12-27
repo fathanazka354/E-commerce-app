@@ -7,8 +7,6 @@ import com.fathan.e_commerce.data.remote.api.RecoverRequest
 import com.fathan.e_commerce.data.remote.api.SupabaseApi
 import com.fathan.e_commerce.data.remote.api.UpdatePasswordRequest
 import com.fathan.e_commerce.data.remote.api.UserResponse
-import com.fathan.e_commerce.data.models.auth.CreateUserWithRelationsParams
-import com.fathan.e_commerce.domain.entities.auth.AccountType
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.rpc
