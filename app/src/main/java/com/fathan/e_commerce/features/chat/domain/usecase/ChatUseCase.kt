@@ -1,84 +1,48 @@
 package com.fathan.e_commerce.features.chat.domain.usecase
 
-import com.fathan.e_commerce.features.chat.domain.entity.ChatMessage
+import android.net.Uri
 import com.fathan.e_commerce.features.chat.domain.entity.ConversationItem
+import com.fathan.e_commerce.features.chat.domain.entity.Message
 import com.fathan.e_commerce.features.chat.domain.repository.ChatRepository
 
 
-import kotlinx.coroutines.flow.Flow
-
 class FetchAllChats(private val repo: ChatRepository) {
-    suspend operator fun invoke(): List<ConversationItem> = repo.fetchAllChats()
+    suspend operator fun invoke(): Result<List<ConversationItem>> = repo.fetchAllChats()
 }
-class FetchChatByRoom(private val repo: ChatRepository) {
-    suspend operator fun invoke(roomId: String): List<ChatMessage> = repo.fetchChatByRoomId(roomId)
+class FetchMessages(private val repo: ChatRepository) {
+    suspend operator fun invoke(conversationId: String): Result<List<Message>> = repo.getMessages(conversationId)
 }
-class FetchChatByRoomWithStatus(private val repo: ChatRepository) {
-    suspend operator fun invoke(roomId: String): List<ChatMessage> = repo.fetchChatByRoomIdWithStatus(roomId)
-}
-class CreateRoomIfNotExists(private val repo: ChatRepository) {
-    suspend operator fun invoke(targetUserId: String): String {
-        return repo.createRoomIfNotExists(targetUserId)
-    }
-}
-
-class ReadByRoom(private val repo: ChatRepository) {
-    suspend operator fun invoke(roomId: String) = repo.readByRoomId(roomId)
-}
-
-class MarkAllAsRead(private val repo: ChatRepository) {
-    suspend operator fun invoke(receiverId: String) = repo.markAllAsRead(receiverId)
-}
-
-class DeleteChat(private val repo: ChatRepository) {
-    suspend operator fun invoke(messageId: String) = repo.deleteChat(messageId)
-}
-
-class FindChat(private val repo: ChatRepository) {
-    suspend operator fun invoke(query: String, senderId: String? = null): List<ChatMessage> =
-        repo.findChat(query, senderId)
-}
-
 class SendText(private val repo: ChatRepository) {
-    suspend operator fun invoke(roomId: String, senderId: String, text: String) = repo.sendText(roomId,  text)
+    suspend operator fun invoke(conversationId: String, messageType: String, messageContent: String, productId: Long?) = repo.sendMessage(conversationId,  messageType = messageType, messageContent = messageContent, productId = productId)
 }
 class SendImage(private val repo: ChatRepository) {
     suspend operator fun invoke(
-        roomId: String,
-        senderId: String,
-        bytes: ByteArray,
-        mime: String,
-        filename: String,
-        caption: String?
-    ): ChatMessage? {
-        return repo.sendImage(roomId, senderId, bytes, mime, filename, caption)
-    }
+        conversationId: String,
+        imageUri: Uri
+    ): Result<String> = repo.sendImage(conversationId, imageUri)
 }
+
+// ✅ NEW: Send Audio
 class SendAudio(private val repo: ChatRepository) {
     suspend operator fun invoke(
-        roomId: String,
-        bytes: ByteArray,
-        mime: String,
-        filename: String,
-        durationMs: Long
-    ): ChatMessage? {
-        return repo.sendAudio(roomId, bytes, mime, filename, durationMs)
-    }
+        conversationId: String,
+        audioUri: Uri,
+        duration: Long
+    ): Result<String> = repo.sendAudio(conversationId, audioUri, duration)
 }
 
+class Subscribe(private val repo: ChatRepository) {
+    operator fun invoke(conversationId: String, onMessage: (Message) -> Unit) = repo.subscribeToMessages(conversationId = conversationId, onNewMessage = onMessage)
+}
+class MarkAsRead(private val repo: ChatRepository) {
+    suspend operator fun invoke(conversationId: String) = repo.markConversationAsRead(conversationId = conversationId,)
+}
 data class ChatUseCases(
     val fetchAllChats: FetchAllChats,
-    val fetchChatByRoom: FetchChatByRoom,
-    val fetchChatByRoomWithStatus: FetchChatByRoomWithStatus,
-    val readByRoom: ReadByRoom,
-    val markAllAsRead: MarkAllAsRead,
-    val deleteChat: DeleteChat,
-    val findChat: FindChat,
+    val fetchMessages: FetchMessages,
     val sendText: SendText,
-    val sendImage: SendImage,
+    val subscribe: Subscribe,
+    val markAsRead: MarkAsRead,
     val sendAudio: SendAudio,
-    val createRoomIfNotExists: CreateRoomIfNotExists,
-
-    // expose incoming realtime messages for ViewModel to subscribe
-    val incomingMessages: Flow<ChatMessage>
+    val sendImage: SendImage,
 )

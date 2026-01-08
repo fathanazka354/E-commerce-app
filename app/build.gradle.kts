@@ -12,6 +12,8 @@ plugins {
 
     // Supabase (kotlin serialization)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
+
 }
 
 android {
@@ -114,6 +116,14 @@ dependencies {
     implementation(libs.androidx.material3)
 
     implementation(libs.androidx.navigation.compose)
+    implementation(platform(libs.firebase.bom))
+
+    // ✅ Firebase dependencies (version managed by BOM)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
+
+    // ✅ Coroutines for Firebase
+    implementation(libs.kotlinx.coroutines.play.services)
 
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.datastore.core)
@@ -124,6 +134,8 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
+    implementation("io.ktor:ktor-client-cio:2.3.5")  // ✅ CIO engine supports WebSocket
+    implementation("io.github.jan-tennert.supabase:storage-kt:2.5.2")  // ✅ ADD THIS
 
 //    implementation(libs.ktor.client.android)
     implementation(libs.logging.interceptor)

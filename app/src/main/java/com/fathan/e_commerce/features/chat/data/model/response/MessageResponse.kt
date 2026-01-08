@@ -1,9 +1,12 @@
 package com.fathan.e_commerce.features.chat.data.model.response
 
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 // Message.kt
+@Serializable
 data class MessageResponse(
+    @SerialName("id")  // ✅ ADD THIS
     val id: String,
 
     @SerialName("conversation_id")
@@ -15,7 +18,7 @@ data class MessageResponse(
     @SerialName("message_type")
     val messageType: String, // "text", "image", "product_card", "system"
 
-    @SerialName("message_content")
+    @SerialName("content")
     val messageContent: String,
 
     @SerialName("product_id")
@@ -30,6 +33,4 @@ data class MessageResponse(
     @SerialName("created_at")
     val createdAt: String,
 
-    @SerialName("updated_at")
-    val updatedAt: String
 )

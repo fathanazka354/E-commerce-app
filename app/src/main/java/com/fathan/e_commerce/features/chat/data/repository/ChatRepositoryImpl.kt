@@ -1,5 +1,6 @@
 package com.fathan.e_commerce.features.chat.data.repository
 
+import android.net.Uri
 import android.util.Log
 import com.fathan.e_commerce.data.utils.ErrorException
 import com.fathan.e_commerce.data.utils.ErrorHandler
@@ -23,6 +24,10 @@ class ChatRepositoryImpl(
     companion object {
         private const val TAG = "ChatRepositoryImpl"
         private const val MAX_MESSAGE_LENGTH = 4000
+    }
+
+    override suspend fun getCurrentUserId(): String? {
+        return remote.getCurrentUserId()
     }
 
     override suspend fun fetchAllChats(): Result<List<ConversationItem>> {
@@ -49,6 +54,7 @@ class ChatRepositoryImpl(
     }
 
     override suspend fun getMessages(conversationId: String): Result<List<Message>> {
+
         return safeApiCall {
             withContext(Dispatchers.IO) {
                 try {
@@ -61,7 +67,7 @@ class ChatRepositoryImpl(
                     if (messages.isEmpty()) {
                         Log.d(TAG, "No messages found in conversation: $conversationId")
 
-                        return@withContext emptyList<Message>()
+                        return@withContext emptyList()
                     }
 
                     val result = messages.map { it.toEntity() }
@@ -103,11 +109,79 @@ class ChatRepositoryImpl(
                         throw error as? ErrorException ?: ErrorHandler.handleException(error)
                     }.also { messageId ->
                         Log.d(TAG, "sendMessage: $messageId")
+
                     }
                 } catch (e: ErrorException) {
                     throw e
                 } catch (e: Exception) {
                     Log.e(TAG, "sendMessage: ", e)
+                    throw ErrorHandler.handleException(e)
+                }
+            }
+        }
+    }
+
+    override suspend fun sendImage(
+        conversationId: String,
+        imageUri: Uri
+    ): Result<String> {
+        return safeApiCall {
+            withContext(Dispatchers.IO) {
+                try {
+                    conversationId.validateConversationId()
+
+                    Log.d(TAG, "sendImage: Uploading image to conversation: $conversationId")
+
+                    val result = remote.sendImage(
+                        conversationId = conversationId,
+                        imageUri = imageUri
+                    )
+
+                    result.getOrElse { error ->
+                        Log.e(TAG, "sendImage failed", error)
+                        throw error as? ErrorException ?: ErrorHandler.handleException(error)
+                    }.also { messageId ->
+                        Log.d(TAG, "Image sent successfully: $messageId")
+                    }
+                } catch (e: ErrorException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "sendImage error", e)
+                    throw ErrorHandler.handleException(e)
+                }
+            }
+        }
+    }
+
+    // ✅ NEW: Send Audio
+    override suspend fun sendAudio(
+        conversationId: String,
+        audioUri: Uri,
+        duration: Long
+    ): Result<String> {
+        return safeApiCall {
+            withContext(Dispatchers.IO) {
+                try {
+                    conversationId.validateConversationId()
+
+                    Log.d(TAG, "sendAudio: Uploading audio to conversation: $conversationId")
+
+                    val result = remote.sendAudio(
+                        conversationId = conversationId,
+                        audioUri = audioUri,
+                        duration = duration
+                    )
+
+                    result.getOrElse { error ->
+                        Log.e(TAG, "sendAudio failed", error)
+                        throw error as? ErrorException ?: ErrorHandler.handleException(error)
+                    }.also { messageId ->
+                        Log.d(TAG, "Audio sent successfully: $messageId")
+                    }
+                } catch (e: ErrorException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(TAG, "sendAudio error", e)
                     throw ErrorHandler.handleException(e)
                 }
             }
@@ -183,12 +257,15 @@ class ChatRepositoryImpl(
         }
     }
 
-    override suspend fun subscribeToMessages(
+    override fun subscribeToMessages(
         conversationId: String,
         onNewMessage: (Message) -> Unit
     ): RealtimeChannel {
         return try {
             conversationId.validateConversationId()
+
+
+            Log.d(TAG, "Subscribing to messages for conversation: $conversationId")
 
             remote.subscribeToMessages(
                 conversationId = conversationId,

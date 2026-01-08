@@ -1,9 +1,9 @@
 package com.fathan.e_commerce.di
 
+import android.content.Context
 import com.fathan.e_commerce.BuildConfig
 import com.fathan.e_commerce.data.remote.api.RetrofitProvider
 import com.fathan.e_commerce.data.remote.api.SupabaseApi
-import com.fathan.e_commerce.features.chat.data.api.SupabaseChatApi
 import com.fathan.e_commerce.features.chat.data.repository.ChatRepositoryImpl
 import com.fathan.e_commerce.features.chat.data.source.ChatRemoteDataSource
 import com.fathan.e_commerce.features.chat.data.source.ChatRemoteDataSourceImpl
@@ -18,12 +18,17 @@ import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
-import kotlinx.coroutines.CoroutineScope
+import io.github.jan.supabase.storage.Storage
+
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.github.jan.supabase.realtime.Realtime
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.cio.endpoint
 import okhttp3.MediaType.Companion.toMediaType
 import java.util.concurrent.TimeUnit
 import javax.inject.Named
@@ -42,13 +47,31 @@ object SupabaseModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseClient(): SupabaseClient {
+    fun provideSupabaseClient(@ApplicationContext context: Context): SupabaseClient {
         return createSupabaseClient(
             supabaseUrl = SUPABASE_URL,
             supabaseKey = SUPABASE_ANON_KEY
         ) {
-            install(Auth)
+            // ✅ Install Auth with persistence settings
+            install(Auth) {
+                autoSaveToStorage = true    // ✅ Auto-save session
+                alwaysAutoRefresh = true    // ✅ Auto-refresh tokens
+            }
+
             install(Postgrest)
+            install(Storage)  // ✅ Add Storage for image/audio upload
+
+            install(Realtime) {
+                // Realtime configuration
+            }
+
+            // ✅ Set CIO engine for WebSocket support
+            httpEngine = CIO.create {
+                endpoint {
+                    connectTimeout = 30_000
+                    requestTimeout = 60_000
+                }
+            }
         }
     }
 
@@ -84,20 +107,21 @@ object SupabaseModule {
             .build()
     }
 
-    @Provides
-    @Singleton
-    fun provideSupabaseChatApi(@Named("chat_retrofit") retrofit: Retrofit): SupabaseChatApi {
-        return retrofit.create(SupabaseChatApi::class.java)
-    }
+//    @Provides
+//    @Singleton
+//    fun provideSupabaseChatApi(@Named("chat_retrofit") retrofit: Retrofit): SupabaseChatApi {
+//        return retrofit.create(SupabaseChatApi::class.java)
+//    }
 
     @Provides
     @Singleton
     fun provideSupabaseRemoteDataSource(
-        api: SupabaseChatApi,
-        postgrest: Postgrest,
+//        api: SupabaseChatApi,
+//        postgrest: Postgrest,
+        @ApplicationContext ctx: Context,
         supabaseClient: SupabaseClient
     ): ChatRemoteDataSource {
-        return ChatRemoteDataSourceImpl( supabaseClient = supabaseClient)
+        return ChatRemoteDataSourceImpl( context = ctx,supabaseClient = supabaseClient)
     }
 
     @Provides

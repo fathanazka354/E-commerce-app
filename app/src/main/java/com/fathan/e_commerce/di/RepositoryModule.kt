@@ -14,19 +14,16 @@ import com.fathan.e_commerce.domain.repository.FavoriteRepository
 import com.fathan.e_commerce.features.product.domain.repository.ProductRepository
 import com.fathan.e_commerce.domain.repository.PromoRepository
 import com.fathan.e_commerce.domain.repository.WishlistRepository
+import com.fathan.e_commerce.domain.usecase.auth.GetCurrentUserUseCase
 import com.fathan.e_commerce.domain.usecase.auth.LogoutUseCase
 import com.fathan.e_commerce.features.chat.domain.usecase.ChatUseCases
-import com.fathan.e_commerce.features.chat.domain.usecase.CreateRoomIfNotExists
-import com.fathan.e_commerce.features.chat.domain.usecase.DeleteChat
 import com.fathan.e_commerce.features.chat.domain.usecase.FetchAllChats
-import com.fathan.e_commerce.features.chat.domain.usecase.FetchChatByRoom
-import com.fathan.e_commerce.features.chat.domain.usecase.FetchChatByRoomWithStatus
-import com.fathan.e_commerce.features.chat.domain.usecase.FindChat
-import com.fathan.e_commerce.features.chat.domain.usecase.MarkAllAsRead
-import com.fathan.e_commerce.features.chat.domain.usecase.ReadByRoom
+import com.fathan.e_commerce.features.chat.domain.usecase.FetchMessages
+import com.fathan.e_commerce.features.chat.domain.usecase.MarkAsRead
 import com.fathan.e_commerce.features.chat.domain.usecase.SendAudio
 import com.fathan.e_commerce.features.chat.domain.usecase.SendImage
 import com.fathan.e_commerce.features.chat.domain.usecase.SendText
+import com.fathan.e_commerce.features.chat.domain.usecase.Subscribe
 import com.fathan.e_commerce.features.product.domain.usecase.GetCategoriesUseCase
 import com.fathan.e_commerce.features.product.domain.usecase.GetFavoritesUseCase
 import com.fathan.e_commerce.features.product.domain.usecase.GetFlashSaleUseCase
@@ -78,32 +75,6 @@ object RepositoryModule {
         repo: FavoriteRepository
     ): GetFavoritesUseCase = GetFavoritesUseCase(repo)
 
-//
-//    @Provides
-//    @Singleton
-//    fun provideGetChatsUseCase(
-//        repo: ChatRepository
-//    ): GetMessagesUseCase = GetMessagesUseCase(repo)
-//
-
-//    @Provides
-//    @Singleton
-//    fun provideSendChatUseCase(
-//        repo: ChatRepository
-//    ): SendTextMessageUseCase = SendTextMessageUseCase(repo)
-//
-//    @Provides
-//    @Singleton
-//    fun provideSendImageChatUseCase(
-//        repo: ChatRepository
-//    ): SendImageMessageUseCase = SendImageMessageUseCase(repo)
-//
-//    @Provides
-//    @Singleton
-//    fun provideSendAudioChatUseCase(
-//        repo: ChatRepository
-//    ): SendAudioMessageUseCase = SendAudioMessageUseCase(repo)
-
     @Provides
     @Singleton
     fun provideProductRepository(
@@ -152,6 +123,12 @@ object RepositoryModule {
         authRepository: AuthRepository
     ): LogoutUseCase = LogoutUseCase(authRepository)
 
+    @Provides
+    @Singleton
+    fun provideGetCurrentUserUseCase(
+        authRepository: AuthRepository
+    ): GetCurrentUserUseCase = GetCurrentUserUseCase(authRepository)
+
 
     @Provides    @Singleton
     fun provideWishlistRepository(wishlistDao: WishlistDao): WishlistRepository {
@@ -164,17 +141,12 @@ object RepositoryModule {
     fun provideUseCases(repo: com.fathan.e_commerce.features.chat.domain.repository.ChatRepository): ChatUseCases {
         return ChatUseCases(
             fetchAllChats = FetchAllChats(repo),
-            fetchChatByRoom = FetchChatByRoom(repo),
-            readByRoom = ReadByRoom(repo),
-            markAllAsRead = MarkAllAsRead(repo),
-            deleteChat = DeleteChat(repo),
-            findChat = FindChat(repo),
+            fetchMessages = FetchMessages(repo),
             sendText = SendText(repo),
-            sendImage = SendImage(repo),
+            subscribe = Subscribe(repo),
+            markAsRead = MarkAsRead(repo),
             sendAudio = SendAudio(repo),
-            createRoomIfNotExists = CreateRoomIfNotExists(repo),
-            incomingMessages = repo.incomingMessages,
-            fetchChatByRoomWithStatus = FetchChatByRoomWithStatus(repo)
+            sendImage = SendImage(repo)
         )
     }
 
@@ -193,7 +165,6 @@ object RepositoryModule {
     ): AuthRepository {
         return AuthRepositoryImpl(
             auth,
-            postgrest = postgrest,
             remoteDataSource = remoteDataSource
         )
     }

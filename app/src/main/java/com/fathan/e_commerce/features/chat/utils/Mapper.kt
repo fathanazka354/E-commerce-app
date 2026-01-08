@@ -1,14 +1,16 @@
 package com.fathan.e_commerce.features.chat.utils
 
+import android.util.Log
 import com.fathan.e_commerce.features.chat.data.model.response.ConversationItemResponse
 import com.fathan.e_commerce.features.chat.data.model.response.MessageResponse
 import com.fathan.e_commerce.features.chat.domain.entity.ConversationItem
 import com.fathan.e_commerce.features.chat.domain.entity.Message
 
-//import com.fathan.e_commerce.features.chat.data.model.response.MessageResponse
-//import com.fathan.e_commerce.features.chat.domain.entity.Message
-//
 fun MessageResponse.toEntity(): Message {
+    Log.d("ChatMapper", "Converting MessageResponse to Message:")
+    Log.d("ChatMapper", "  ID: $id")
+    Log.d("ChatMapper", "  Content: '$messageContent'")
+    Log.d("ChatMapper", "  Content length: ${messageContent.length}")
     return Message(
         id = id,
         senderId = senderId,
@@ -18,8 +20,7 @@ fun MessageResponse.toEntity(): Message {
         isRead = isRead,
         readAt = readAt,
         productId = productId,
-        updatedAt = updatedAt,
-        messageContent = messageContent
+        messageContent = messageContent,
     )
 }
 fun ConversationItemResponse.toEntity(): ConversationItem {
@@ -33,6 +34,7 @@ fun ConversationItemResponse.toEntity(): ConversationItem {
         unreadCount = unreadCount,
         lastMessageAt = lastMessageAt,
         conversationId = conversationId,
-        otherUserAvatar = otherUserAvatar
+        otherUserAvatar = otherUserAvatar,
+        messageType = messageType
     )
 }

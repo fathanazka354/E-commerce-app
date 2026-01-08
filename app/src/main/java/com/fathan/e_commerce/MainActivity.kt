@@ -1,5 +1,6 @@
 package com.fathan.e_commerce
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -11,12 +12,18 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.fathan.e_commerce.data.utils.FCMManager
 import com.fathan.e_commerce.domain.model.CartItem
 import com.fathan.e_commerce.features.checkout.CheckoutScreen
 import com.fathan.e_commerce.features.home.HomeScreen
@@ -24,8 +31,10 @@ import com.fathan.e_commerce.features.login.LoginScreen
 import com.fathan.e_commerce.features.product.ui.ProductDetailScreen
 import com.fathan.e_commerce.features.profile.ProfileScreen
 import com.fathan.e_commerce.features.Screen
-import com.fathan.e_commerce.features.chat.ui.ChatDetailScreen
-import com.fathan.e_commerce.features.chat.ui.ChatScreen
+import com.fathan.e_commerce.features.chat.ui.detail.ChatDetailScreen
+import com.fathan.e_commerce.features.chat.ui.detail.ChatDetailViewModel
+import com.fathan.e_commerce.features.chat.ui.list.ChatListScreen
+import com.fathan.e_commerce.features.chat.ui.list.ChatListViewModel
 import com.fathan.e_commerce.features.forgot_password.ForgotPasswordScreen
 import com.fathan.e_commerce.features.home.HomeViewModel
 import com.fathan.e_commerce.features.login.LoginViewModel
@@ -44,6 +53,8 @@ import com.fathan.e_commerce.features.wishlist.WishlistCollectionDetailScreen
 import com.fathan.e_commerce.features.wishlist.WishlistScreen
 import com.fathan.e_commerce.features.wishlist.WishlistViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import javax.inject.Inject
 
 object TokenHolder {
     var accessToken: String? = null
@@ -60,28 +71,30 @@ object TokenHolder {
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val TAG = "MainActivity"
+    @Inject
+    lateinit var fcmManager: FCMManager
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // handle initial deep link
         handleDeepLink(intent)
+        requestNotificationPermissionIfNeeded()
+        handleNotificationIntent(intent)
 
         setContent {
             ECommerceTheme {
                 val navController = rememberNavController()
+                var cartItems = emptyList<CartItem>()
 
-                // FIX: provide plain List as initial value (not mutableStateOf)
-                var cartItems = emptyList<CartItem>()      // Alternative correct init:
-                // var cartItems by rememberSaveable(saver = CartItemListSaver) { listOf<CartItem>() }
-
-                // Main VM
                 val mainViewModel: MainViewModel = hiltViewModel()
                 val isLoggedIn by mainViewModel.isLoggedIn.collectAsState()
 
-                // If deep link set shouldNavigateToReset, navigate once when nav is ready
+                // ✅ Handle deep link navigation
                 LaunchedEffect(navController, TokenHolder.shouldNavigateToReset) {
                     if (TokenHolder.shouldNavigateToReset) {
                         Log.d(TAG, "Navigate to reset-password due to deep link")
@@ -105,6 +118,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handleNotificationIntent(intent)
         handleDeepLink(intent)
     }
 
@@ -131,9 +145,53 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "Deep link not recognized")
         }
     }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (!fcmManager.hasNotificationPermission(this)) {
+            fcmManager.requestNotificationPermission(this)
+        } else {
+            fcmManager.initializeFCM(lifecycleScope)
+        }
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        intent?.extras?.let { extras ->
+            val shouldOpenChat = extras.getBoolean("open_chat", false)
+            val conversationId = extras.getString("conversation_id")
+
+            Log.d(TAG, "Notification intent - openChat: $shouldOpenChat, conversationId: $conversationId")
+
+            if (shouldOpenChat && conversationId != null) {
+                // ✅ Save to SharedPreferences
+                getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("pending_conversation_id", conversationId)
+                    .putBoolean("should_open_chat", true)
+                    .apply()
+
+                Log.d(TAG, "Saved pending navigation to SharedPreferences")
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            FCMManager.NOTIFICATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() &&
+                    grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "Notification permission granted via callback")
+                    fcmManager.initializeFCM(lifecycleScope)
+                }
+            }
+        }
+    }
 }
 
-/* Nav host (kept same, but ProductDetailScreen call fixed) */
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun AppNavHost(
@@ -142,6 +200,46 @@ private fun AppNavHost(
     cartItems: List<CartItem>,
     onCartChanged: (List<CartItem>) -> Unit
 ) {
+    val context = LocalContext.current
+
+    // ✅ IMPROVED: Check for pending navigation with proper delay and state tracking
+    var hasHandledPendingNavigation by remember { mutableStateOf(false) }
+
+    LaunchedEffect(navController.currentBackStackEntry) {
+        if (hasHandledPendingNavigation) return@LaunchedEffect
+
+        val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val shouldOpenChat = prefs.getBoolean("should_open_chat", false)
+        val conversationId = prefs.getString("pending_conversation_id", null)
+
+        if (shouldOpenChat && conversationId != null) {
+            Log.d("MainActivity", "Opening chat from notification: $conversationId")
+
+            // Clear the flag immediately
+            prefs.edit()
+                .remove("should_open_chat")
+                .remove("pending_conversation_id")
+                .apply()
+
+            // ✅ Wait for navigation to be ready
+            delay(1000) // Increased delay
+
+            try {
+                // Navigate directly to chat detail
+                navController.navigate(Screen.ChatDetail.createRoute(conversationId)) {
+                    // Clear back stack to home
+                    popUpTo(Screen.Home.route) {
+                        inclusive = false
+                    }
+                }
+                hasHandledPendingNavigation = true
+                Log.d("MainActivity", "Successfully navigated to chat detail")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Failed to navigate to chat", e)
+            }
+        }
+    }
+
     NavHost(navController = navController, startDestination = startDestination, modifier = Modifier.padding()) {
         composable(Screen.Login.route) {
             val loginVM: LoginViewModel = hiltViewModel()
@@ -237,42 +335,87 @@ private fun AppNavHost(
         }
 
         composable(Screen.Chat.route) {
-            ChatScreen(
-                onBack = { navController.popBackStack() },
+            val viewModel = hiltViewModel<ChatListViewModel>()
+            val lifecycleOwner = LocalLifecycleOwner.current
+
+            // ✅ Refresh when screen becomes visible
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        Log.d("MainActivity", "ChatList screen resumed, refreshing...")
+                        viewModel.refreshConversations()
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
+            }
+
+            ChatListScreen(
+                viewModel = viewModel,
+                onConversationClick = { conversationId ->
+                    navController.navigate(
+                        Screen.ChatDetail.createRoute(conversationId)
+                    )
+                },
+                onChatClick = { /* already on chat */ },
                 onHomeClick = {
-                    navController.safeNavigate(Screen.Home.route) {
+                    navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Home.route) { inclusive = false }
                     }
                 },
                 onProfileClick = { navController.navigate(Screen.Profile.route) },
-                onChatClick = { navController.navigate(Screen.Chat.route) },
-                onTransactionClick = { navController.navigate(Screen.Transaction.route) },
-                onChatOpen = { roomId, authId ->
-                    // navigate to detail and pass room id
-                    navController.safeNavigate(Screen.ChatDetailWithUser.createRoute(roomId, authId)){
-                        navController.navigate(Screen.Chat.route)
-                    }
-                }
+                onTransactionClick = { navController.navigate(Screen.Transaction.route) }
             )
         }
 
-//        composable(
-//            route = Screen.ChatDetailWithUser.route,
-//            arguments = listOf(
-//                navArgument("roomId") { type = NavType.StringType },
-//                navArgument("myAuthId") { type = NavType.StringType }
-//            )
-//        ) { backStackEntry ->
-//            val roomId = backStackEntry.arguments?.getString("roomId") ?: return@composable
-//            val myAuthId = backStackEntry.arguments?.getString("myAuthId") ?: return@composable
-//            ChatDetailScreen(roomId = roomId, myAuthId = myAuthId, onBack = { navController.popBackStack() })
-//        }
-        composable("chat_detail/{roomId}/{authId}") { backStack ->
-            val roomId = backStack.arguments?.getString("roomId") ?: ""
-            val authId = backStack.arguments?.getString("authId") ?: ""
-            ChatDetailScreen(roomId = roomId, myUserId = authId, onBack = { navController.popBackStack() })
-        }
+        // ✅ BALANCED APPROACH: Don't over-refresh
+        composable(Screen.ChatDetail.route) { backStack ->
+            val viewModel = hiltViewModel<ChatDetailViewModel>()
+            val lifecycleOwner = LocalLifecycleOwner.current
 
+            // ✅ Track if this is first composition
+            var hasRefreshedOnce by remember { mutableStateOf(false) }
+
+            // ✅ CONSERVATIVE: Only refresh when truly needed
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    when (event) {
+                        Lifecycle.Event.ON_RESUME -> {
+                            // ✅ Only refresh if NOT first time
+                            if (hasRefreshedOnce) {
+                                Log.d("MainActivity", "ChatDetail ON_RESUME (returning from background) - refreshing...")
+                                viewModel.refreshMessages()
+                            } else {
+                                Log.d("MainActivity", "ChatDetail ON_RESUME (first time) - skipping refresh")
+                                hasRefreshedOnce = true
+                            }
+                            viewModel.markAsRead()
+                        }
+                        Lifecycle.Event.ON_PAUSE -> {
+                            Log.d("MainActivity", "ChatDetail ON_PAUSE")
+                        }
+                        else -> {}
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+
+                onDispose {
+                    Log.d("MainActivity", "ChatDetail disposed, removing observer")
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                    hasRefreshedOnce = false // Reset for next visit
+                }
+            }
+
+            ChatDetailScreen(
+                viewModel = viewModel,
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
 
         composable(Screen.Transaction.route) {
             TransactionScreen(
@@ -330,20 +473,15 @@ private fun AppNavHost(
             val detailVM: ProductDetailViewModel = hiltViewModel()
             val productId = backStackEntry.arguments?.getInt("productId") ?: 0
 
-            // Trigger load only when we have a valid productId
             LaunchedEffect(productId) {
                 if (productId > 0) {
-                    detailVM.loadProduct(productId)   // <-- load here, NOT inside Screen
+                    detailVM.loadProduct(productId)
                 }
             }
-            // For now we reuse DummyData; in production fetch inside detailVM by productId
-//            val product = DummyData.products.firstOrNull { it.id == productId } ?: DummyData.products.first()
-            val uiState by detailVM.uiState.collectAsState()
 
-            // Product data fallback (for UI that expects a Product object immediately)
+            val uiState by detailVM.uiState.collectAsState()
             val product = uiState.product
             Log.d("MainActivity", "AppNavHost: ${product.name} || ${product.description}")
-            // --- FIX: pass correct params that match your ProductDetailScreen signature ---
 
             ProductDetailScreen(
                 uiState = uiState,
@@ -376,27 +514,8 @@ private fun AppNavHost(
     }
 }
 
-/* helper safe navigation to avoid duplicate navigation */
 private fun NavHostController.safeNavigate(route: String, builder: (NavOptionsBuilder.() -> Unit)? = null) {
     val currentRoute = currentBackStackEntry?.destination?.route
     if (currentRoute == route) return
     if (builder == null) navigate(route) else navigate(route, builder)
 }
-
-/* Saver for rememberSaveable cart list (simple) */
-//private val CartItemListSaver = run {
-//    listSaver<List<CartItem>, String>(
-//        save = { list -> listOf(list.joinToString("|") { "${it.product.id},${it.quantity}" }) },
-//        restore = { serialized ->
-//            if (serialized.isEmpty()) return@listSaver emptyList()
-//            val pairs = serialized.toString().split("|")
-//            pairs.mapNotNull {
-//                val parts = it.split(",")
-//                val pid = parts.getOrNull(0)?.toIntOrNull()
-//                val qty = parts.getOrNull(1)?.toIntOrNull() ?: 1
-//                val product = DummyData.products.firstOrNull { p -> p.id == pid } ?: return@mapNotNull null
-//                CartItem(product = product, quantity = qty, selectedColor = null, selectedStorage = null)
-//            }
-//        }
-//    )
-//}

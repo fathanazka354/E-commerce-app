@@ -14,6 +14,6 @@ interface AuthRepository {
     suspend fun signUp(params: SignUpParams): SignUpResult
     suspend fun resetPasswordWithToken(token: String, newPassword: String): AuthResult<Boolean>
     suspend fun requestPasswordReset(email: String, redirectTo: String?): AuthResult<Boolean>
-
+    fun currentUser(): AuthUser?
     suspend fun logout(): Boolean
 }

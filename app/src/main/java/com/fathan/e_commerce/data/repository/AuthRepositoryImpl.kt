@@ -1,7 +1,6 @@
 package com.fathan.e_commerce.data.repository
 
 import android.util.Log
-import com.fathan.e_commerce.data.models.SupabaseUser
 import com.fathan.e_commerce.data.models.auth.SignUpResult
 import com.fathan.e_commerce.data.remote.SupabaseUserRemoteDataSource
 import com.fathan.e_commerce.domain.entities.auth.AccountType
@@ -11,18 +10,14 @@ import com.fathan.e_commerce.domain.repository.AuthRepository
 import com.fathan.e_commerce.domain.repository.AuthResult
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
 class AuthRepositoryImpl @Inject constructor(
     private val supabaseAuth: Auth,
     private val remoteDataSource: SupabaseUserRemoteDataSource,
-    private val postgrest: Postgrest
 ) : AuthRepository {
 
     override suspend fun login(
@@ -93,13 +88,13 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun resetPasswordWithToken(
-        accessToken: String,
+        token: String,
         newPassword: String
     ): AuthResult<Boolean> {
         return try {
             // Cukup update ke Supabase Auth
             remoteDataSource.updatePasswordWithAccessToken(
-                accessToken,
+                token,
                 newPassword
             )
 
@@ -125,24 +120,15 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun hashPassword(password: String): String {
-        val bytes = MessageDigest
-            .getInstance("SHA-256")
-            .digest(password.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
+    override fun currentUser(): AuthUser? {
+        val session = supabaseAuth.currentSessionOrNull()
+        val user = session?.user ?: return null
+
+        return AuthUser(
+            uid = user.id,
+            email = user.email ?: ""
+        )
     }
-
-
-
-//    override fun currentUser(): AuthUser? {
-//        val session = supabaseAuth.currentSessionOrNull()
-//        val user = session?.user ?: return null
-//
-//        return AuthUser(
-//            uid = user.id,
-//            email = user.email ?: ""
-//        )
-//    }
 
     override suspend fun logout(): Boolean {
         return try {

@@ -17,6 +17,7 @@ data class ConversationItem (
     val lastMessage: String,
 
     val lastMessageAt: String?,
+    val messageType: MessageType,
 
     val unreadCount: Int,
 
